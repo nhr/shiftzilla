@@ -1,0 +1,126 @@
+CREATE TABLE "ALL_BUGS" (
+"Bug ID",
+"Product",
+"Component",
+"Target Release",
+"PM Score",
+"Assignee",
+"Status",
+"Resolution",
+"Summary",
+"Changed",
+"Snapshot" DATE
+);
+
+CREATE UNIQUE INDEX "UK_AB_ID_SNAPSHOT" ON "ALL_BUGS" ("Bug ID","Snapshot");
+
+CREATE TABLE "RELEASE_BUGS" (
+"Bug ID",
+"Product",
+"Component",
+"Target Release",
+"PM Score",
+"Assignee",
+"Status",
+"Resolution",
+"Summary",
+"Changed",
+"Snapshot" DATE
+);
+
+CREATE UNIQUE INDEX "UK_RB_ID_SNAPSHOT" ON "RELEASE_BUGS" ("Bug ID","Snapshot");
+
+CREATE TABLE "TEST_BLOCKERS" (
+"Bug ID",
+"Summary",
+"Version",
+"Severity",
+"Priority",
+"Component",
+"Reporter",
+"Assignee",
+"QA Contact",
+"Status",
+"Product",
+"Changed",
+"Keywords",
+"Target Release",
+"Snapshot" DATE
+);
+
+CREATE UNIQUE INDEX "UK_TB_ID_SNAPSHOT" ON "TEST_BLOCKERS" ("Bug ID","Snapshot");
+
+CREATE VIEW RELEASE_BUGS_BY_COMPONENT_TODAY
+AS 
+SELECT Component, count()
+  FROM RELEASE_BUGS RB
+ WHERE RB.Snapshot == date('now')
+ GROUP BY Component;
+
+CREATE VIEW RELEASE_BUGS_CLOSED_YESTERDAY
+AS
+SELECT *
+  FROM RELEASE_BUGS RB
+ WHERE RB.Snapshot == (SELECT max(RBA.Snapshot)
+                         FROM RELEASE_BUGS RBA
+                        WHERE RBA.Snapshot != date('now'))
+   AND RB.'Bug ID' NOT IN (SELECT RBI.'Bug ID'
+                             FROM RELEASE_BUGS RBI
+                            WHERE RBI.Snapshot == date('now'));
+
+CREATE VIEW RELEASE_BUGS_NEW_TODAY
+AS 
+SELECT *
+  FROM RELEASE_BUGS RB
+ WHERE RB.Snapshot == date('now')
+   AND RB.'Bug ID' NOT IN (SELECT RBI.'Bug ID'
+                             FROM RELEASE_BUGS RBI
+                            WHERE RBI.Snapshot == (SELECT max(RBA.Snapshot)
+                                                     FROM RELEASE_BUGS RBA
+                                                    WHERE RBA.Snapshot != date('now')));
+
+CREATE VIEW RELEASE_BUGS_NO_TARGET_RELEASE_TODAY
+AS 
+SELECT *
+  FROM RELEASE_BUGS RB
+ WHERE RB.Snapshot == date('now')
+   AND RB.'Target Release' LIKE '%---%';
+
+CREATE VIEW RELEASE_BUGS_TODAY
+AS 
+SELECT *
+  FROM RELEASE_BUGS RB
+ WHERE RB.Snapshot == date('now');
+
+CREATE VIEW TEST_BLOCKERS_CLOSED_YESTERDAY
+AS
+SELECT *
+  FROM TEST_BLOCKERS TB
+ WHERE TB.Snapshot == (SELECT max(TBA.Snapshot)
+                         FROM TEST_BLOCKERS TBA
+                        WHERE TBA.Snapshot != date('now'))
+   AND TB.'Target Release' $RELEASE_CLAUSE
+   AND TB.'Bug ID' NOT IN (SELECT TBI.'Bug ID'
+                             FROM TEST_BLOCKERS TBI
+                            WHERE TBI.Snapshot == date('now')
+                              AND TBI.'Target Release' $RELEASE_CLAUSE);
+
+CREATE VIEW TEST_BLOCKERS_NEW_TODAY
+AS
+SELECT *
+  FROM TEST_BLOCKERS TB
+ WHERE TB.Snapshot == date('now')
+   AND TB.'Target Release' $RELEASE_CLAUSE
+   AND TB.'Bug ID' NOT IN (SELECT TBI.'Bug ID'
+                             FROM TEST_BLOCKERS TBI
+                            WHERE TBI.Snapshot == (SELECT max(TBA.Snapshot)
+                                                     FROM TEST_BLOCKERS TBA
+                                                    WHERE TBA.Snapshot != date('now'))
+                              AND TBI.'Target Release' $RELEASE_CLAUSE);
+
+CREATE VIEW TEST_BLOCKERS_TODAY
+AS
+SELECT *
+  FROM TEST_BLOCKERS TB
+ WHERE TB.Snapshot == date('now')
+   AND TB.'Target Release' $RELEASE_CLAUSE;

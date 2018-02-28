@@ -1,0 +1,122 @@
+#!/usr/bin/env ruby
+
+require 'shiftzilla/engine'
+require 'shiftzilla/helpers'
+require 'shiftzilla/version'
+require 'trollop'
+
+include Shiftzilla::Engine
+include Shiftzilla::Helpers
+
+SUB_COMMANDS = %w{help version load build purge triage summary}
+Trollop::options do
+  version Shiftzilla::VERSION
+  banner <<-EOF
+Usage:
+  #$0 <command>
+
+Commands:
+  load
+    Queries Bugzilla and loads records into the local DB
+  summary
+    Print a summary report to the terminal
+  build
+    Generates reports based local DB contents
+  purge
+    Removes today's records from the local DB
+
+Options:
+EOF
+  stop_on SUB_COMMANDS
+end
+
+cmd = ARGV.shift
+cmd_opts = case cmd
+when 'load'
+  Trollop::options do
+    banner <<-EOF
+Usage:
+  #$0 load <options>
+
+Description:
+  Runs all of the queries in the 'Queries' portion of the
+  config file, and stores info about each retrieved Bugzilla record
+  in a local database
+
+Options:
+EOF
+  end
+when 'build'
+  Trollop::options do
+    banner <<-EOF
+Usage:
+  #$0 build <options>
+
+Description:
+  Performs aggregations and generates reports based on those,
+  which are rsynced to a target location.
+
+Options:
+EOF
+  end
+when 'purge'
+  Trollop::options do
+    banner <<-EOF
+Usage:
+  #$0 purge <options>
+
+Description:
+  Purges today's data from the local database
+
+Options:
+EOF
+  end
+when 'summary'
+  Trollop::options do
+    banner <<-EOF
+Usage:
+  #$0 summary <options>
+
+Description:
+  Summarizes the overall status
+
+Options:
+EOF
+  end
+when 'triage'
+  Trollop::options do
+    banner <<-EOF
+Usage:
+  #$0 triage <options>
+
+Description:
+  Generate a report of bugs with no target release,
+  ranked by team / component and age.
+
+Options:
+EOF
+  end
+when 'help'
+  Trollop::educate
+when 'version'
+  puts Shiftzilla::VERSION
+  exit 0
+end
+
+# Check for the config info
+check_config
+
+case cmd
+when 'load'
+  load_records
+when 'build'
+  build_reports
+when 'purge'
+  purge_records
+when 'summary'
+  print_summary
+when 'triage'
+  triage_report
+end
+
+exit

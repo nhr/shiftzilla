@@ -1,0 +1,163 @@
+!!! 5
+%html{ :lang => 'en' }
+  %head
+    / Required meta tags
+    %meta{ :charset => 'utf-8' }
+    %meta{ :name => 'viewport', :content => 'width=device-width, initial-scale=1, shrink-to-fit=no' }
+
+    / Bootstrap CSS
+    %link{ :rel         => 'stylesheet',
+           :href        => 'https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css',
+           :integrity   => 'sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm',
+           :crossorigin => 'anonymous' }
+
+    %title Shiftzilla
+  %body
+    .container
+      .row
+        %h1
+          Shiftzilla 
+          \|
+          %small
+            %span.text-muted= team_data.team_title
+          \|
+          %small
+            %span.text-muted= dates[latest_idx]
+      .row
+        .col-4
+          %a{ :name => 'top' }
+          - if team != '_overall' and not team_data.team.nil?
+            %h5 Team Info
+            %ul
+              %li= "Team Lead: #{team_data.team.lead}"
+              %li= "Group Lead: #{team_data.team.group.lead}"
+          %h5 Summary
+          %table.table.table-hover.table-sm
+            %tr
+              %td Total
+              %td= team_data.series[:total][latest_idx]
+            %tr
+              %td Avg. Bug Age
+              %td= team_data.bug_avg_age
+            %tr
+              %td Avg. Test Blocker Age
+              %td= team_data.tb_avg_age
+            %tr
+              %td No Target Release
+              %td= team_data.series[:no_tgt_rel][latest_idx]
+            %tr
+              %td New Today
+              %td= team_data.series[:new][latest_idx]
+            %tr
+              %td Closed Yesterday
+              %td= team_data.series[:closed][latest_idx]
+            %tr
+              %td Test Blockers
+              %td= team_data.series[:tb_total][latest_idx].nil? ? 0 : team_data.series[:tb_total][latest_idx]
+            %tr
+              %td New Blockers Today
+              %td= team_data.series[:tb_new][latest_idx]
+            %tr
+              %td Closed Blockers Yesterday
+              %td= team_data.series[:tb_closed][latest_idx]
+          %h5 Records and Data
+          %ul
+            - if not team_data.series[:total][latest_idx].nil? and team_data.series[:total][latest_idx].to_i > 0
+              %li
+                %a{ :href => '#teamBugs' } Team Bugs
+            %li
+              %a{ :href => '#rawData' } Raw Data
+          %h5 Team Reports
+          %ul
+          - team_files.each do |tf|
+            %li
+              - if tf[:file] == team_data.team_file
+                = tf[:name]
+              - else
+                %a{ :href => tf[:file] }= tf[:name]
+        .col-8
+          %h5 Charts
+          %img{ :class => 'img-fluid', :src => charts[:burndown] }
+          %img{ :class => 'img-fluid', :src => charts[:new_closed] }
+          %img{ :class => 'img-fluid', :src => charts[:blockers] }
+      - if not team_data.series[:total][latest_idx].nil? and team_data.series[:total][latest_idx].to_i > 0
+        .row
+          .col
+            %hr
+            %a{ :name => 'TeamBugs'}
+            %h5
+              Team Bugs
+              %small
+                %a{ :href => '#top' } Back to top
+            %table.table.table-hover.table-sm
+              %tr
+                %th
+                  %abbr{ :title => 'Test Blocker?' } TB?
+                %th Bug
+                %th Component
+                %th Age
+                %th
+                  %abbr{ :title => 'This is a representation of how many customer cases / how much support time has been associated with this bug.' } PM Score
+                %th Owner
+                %th Summary
+              - bug_ids.each do |bzid|
+                %tr{ :class => (team_data.bugs[bzid][:test_blocker] ? 'table-danger' : '') }
+                  %td= team_data.bugs[bzid][:test_blocker] ? '!!' : ''
+                  %td
+                    %a{ :href => "#{bug_url}#{bzid}", :target => '_blank' }= bzid
+                  %td= team_data.bugs[bzid][:component]
+                  %td= team_data.bugs[bzid][:age]
+                  %td= team_data.bugs[bzid][:pm_score]
+                  %td
+                    %a{ :href => "mailto:#{team_data.bugs[bzid][:owner]}" }= team_data.bugs[bzid][:owner]
+                  %td= team_data.bugs[bzid][:summary]
+      .row
+        .col
+          %hr
+          %a{ :name => 'rawData' }
+          %h5
+            Raw Data
+            %small
+              %a{ :href => '#top' } Back to top
+          %table.table.table-hover.table-sm
+            %tr
+              %th Date
+              %th Ideal Trend
+              %th Total
+              %th No Tgt Rel
+              %th New
+              %th Closed
+              %th Test Blockers
+              %th New TB
+              %th Closed TB
+            - (0..(dates.length - 1)).each do |idx|
+              - row_class = ''
+              - case 
+              - when dates[idx] == milestones.feature_complete.stamp
+                - row_class = 'table-primary'
+              - when dates[idx] == milestones.code_freeze.stamp
+                - row_class = 'table-danger'
+              - when dates[idx] == milestones.ga.stamp
+                - row_class = 'table-info'
+              %tr{ :class => row_class }
+                %td= dates[idx]
+                %td= team_data.series[:ideal][idx]
+                %td= team_data.series[:total][idx]
+                %td= team_data.series[:no_tgt_rel][idx]
+                %td= team_data.series[:new][idx]
+                %td= team_data.series[:closed][idx]
+                %td= team_data.series[:tb_total][idx]
+                %td= team_data.series[:tb_new][idx]
+                %td= team_data.series[:tb_closed][idx]
+
+    / Optional JavaScript
+    / jQuery first, then Popper.js, then Bootstrap JS
+    %script{ :src         => 'https://code.jquery.com/jquery-3.2.1.slim.min.js',
+             :integrity   => 'sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN',
+             :crossorigin => 'anonymous' }
+    %script{ :src         => 'https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js',
+             :integrity   => 'sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q',
+             :crossorigin => 'anonymous' }
+    %script{ :src         => 'https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js',
+             :integrity   => 'sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl',
+             :crossorigin => 'anonymous' }
