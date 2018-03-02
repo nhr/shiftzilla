@@ -11,6 +11,10 @@
            :integrity   => 'sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm',
            :crossorigin => 'anonymous' }
 
+    / DataTables CSS
+    %link{ :rel  => 'stylesheet',
+           :href => 'https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css' }
+
     %title Shiftzilla
   %body
     .container
@@ -89,28 +93,30 @@
               Team Bugs
               %small
                 %a{ :href => '#top' } Back to top
-            %table.table.table-hover.table-sm
-              %tr
-                %th
-                  %abbr{ :title => 'Test Blocker?' } TB?
-                %th Bug
-                %th Component
-                %th Age
-                %th
-                  %abbr{ :title => 'This is a representation of how many customer cases / how much support time has been associated with this bug.' } PM Score
-                %th Owner
-                %th Summary
-              - bug_ids.each do |bzid|
-                %tr{ :class => (team_data.bugs[bzid][:test_blocker] ? 'table-danger' : '') }
-                  %td= team_data.bugs[bzid][:test_blocker] ? '!!' : ''
-                  %td
-                    %a{ :href => "#{bug_url}#{bzid}", :target => '_blank' }= bzid
-                  %td= team_data.bugs[bzid][:component]
-                  %td= team_data.bugs[bzid][:age]
-                  %td= team_data.bugs[bzid][:pm_score]
-                  %td
-                    %a{ :href => "mailto:#{team_data.bugs[bzid][:owner]}" }= team_data.bugs[bzid][:owner]
-                  %td= team_data.bugs[bzid][:summary]
+            %table.table.table-sm.table-striped.display{ :id => 'team-bugs' }
+              %thead
+                %tr
+                  %th
+                    %abbr{ :title => 'Test Blocker?' } TB
+                  %th Bug
+                  %th Component
+                  %th Age
+                  %th
+                    %abbr{ :title => 'This is a representation of how many customer cases / how much support time has been associated with this bug.' } PM
+                  %th Owner
+                  %th Summary
+              %tbody
+                - bug_ids.each do |bzid|
+                  %tr
+                    %td= team_data.bugs[bzid][:test_blocker] ? "<span class='badge badge-danger'>BLOCKER</span>" : ''
+                    %td
+                      %a{ :href => "#{bug_url}#{bzid}", :target => '_blank' }= bzid
+                    %td= team_data.bugs[bzid][:component]
+                    %td= team_data.bugs[bzid][:age]
+                    %td= team_data.bugs[bzid][:pm_score]
+                    %td
+                      %a{ :href => "mailto:#{team_data.bugs[bzid][:owner]}" }= team_data.bugs[bzid][:owner]
+                    %td= team_data.bugs[bzid][:summary]
       .row
         .col
           %hr
@@ -141,7 +147,7 @@
                 - row_class = 'table-info'
               %tr{ :class => row_class }
                 %td= dates[idx]
-                %td= team_data.series[:ideal][idx]
+                %td= team_data.series[:ideal][idx].round(2)
                 %td= team_data.series[:total][idx]
                 %td= team_data.series[:no_tgt_rel][idx]
                 %td= team_data.series[:new][idx]
@@ -161,3 +167,15 @@
     %script{ :src         => 'https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js',
              :integrity   => 'sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl',
              :crossorigin => 'anonymous' }
+
+    / DataTables JavaScript
+    %script{ :src => 'https://code.jquery.com/jquery-1.12.4.js' }
+    %script{ :src => 'https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js' }
+    %script{ :src => 'https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap4.min.js' }
+    :javascript
+      $(document).ready(function() {
+        $('#team-bugs').DataTable({
+          'paging': false,
+          'order': [[0,'desc'],[4,'desc']]
+        });
+      } );
