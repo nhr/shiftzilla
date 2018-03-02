@@ -161,14 +161,18 @@ module Shiftzilla
       puts "\nIn CC\n#{in_cc.keys.sort.join(',')}"
     end
 
-    def build_reports
+    def build_reports(options)
       org_data = Shiftzilla::OrgData.new(teams,milestones)
       org_data.populate_org
       org_data.set_totals
       org_data.generate_reports
-      org_data.publish_reports(ssh)
-      system("rm -rf #{tmp_dir}")
-      system("open #{ssh[:url]}")
+      if options[:local_preview]
+        org_data.show_local_reports
+      else
+        org_data.publish_reports(ssh)
+        system("rm -rf #{org_data.tmp_dir}")
+        system("open #{ssh[:url]}")
+      end
     end
 
     private

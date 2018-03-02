@@ -39,31 +39,34 @@
           %table.table.table-hover.table-sm
             %tr
               %td Total
-              %td= team_data.series[:total][latest_idx]
+              %td.text-right= team_data.series[:total][latest_idx]
+            %tr
+              %td w/ Customer Cases
+              %td.text-right= team_data.series[:cust_cases][latest_idx]
             %tr
               %td Avg. Bug Age
-              %td= team_data.bug_avg_age
+              %td.text-right= team_data.bug_avg_age
             %tr
               %td Avg. Test Blocker Age
-              %td= team_data.tb_avg_age
+              %td.text-right= team_data.tb_avg_age
             %tr
               %td No Target Release
-              %td= team_data.series[:no_tgt_rel][latest_idx]
+              %td.text-right= team_data.series[:no_tgt_rel][latest_idx]
             %tr
               %td New Today
-              %td= team_data.series[:new][latest_idx]
+              %td.text-right= team_data.series[:new][latest_idx]
             %tr
               %td Closed Yesterday
-              %td= team_data.series[:closed][latest_idx]
+              %td.text-right= team_data.series[:closed][latest_idx]
             %tr
               %td Test Blockers
-              %td= team_data.series[:tb_total][latest_idx].nil? ? 0 : team_data.series[:tb_total][latest_idx]
+              %td.text-right= team_data.series[:tb_total][latest_idx].nil? ? 0 : team_data.series[:tb_total][latest_idx]
             %tr
               %td New Blockers Today
-              %td= team_data.series[:tb_new][latest_idx]
+              %td.text-right= team_data.series[:tb_new][latest_idx]
             %tr
               %td Closed Blockers Yesterday
-              %td= team_data.series[:tb_closed][latest_idx]
+              %td.text-right= team_data.series[:tb_closed][latest_idx]
           %h5 Records and Data
           %ul
             - if not team_data.series[:total][latest_idx].nil? and team_data.series[:total][latest_idx].to_i > 0
@@ -98,25 +101,28 @@
                 %tr
                   %th
                     %abbr{ :title => 'Test Blocker?' } TB
+                  %th
+                    %a{ :href => 'https://mojo.redhat.com/docs/DOC-1159309', :target => '_blank' } PM
+                  %th
+                    %abbr{ :title => 'Has attached customer cases?'} CC
                   %th Bug
                   %th Component
                   %th Age
-                  %th
-                    %abbr{ :title => 'This is a representation of how many customer cases / how much support time has been associated with this bug.' } PM
                   %th Owner
                   %th Summary
               %tbody
                 - bug_ids.each do |bzid|
                   %tr
-                    %td= team_data.bugs[bzid][:test_blocker] ? "<span class='badge badge-danger'>BLOCKER</span>" : ''
+                    %td= team_data.bugs[bzid][:test_blocker] ? "<span class='badge badge-danger'>TB</span>" : ''
+                    %td= team_data.bugs[bzid][:pm_score]
+                    %td= team_data.bugs[bzid][:cust_cases] ? "<span class='badge badge-warning'>CC</span>" : ''
                     %td
                       %a{ :href => "#{bug_url}#{bzid}", :target => '_blank' }= bzid
                     %td= team_data.bugs[bzid][:component]
                     %td= team_data.bugs[bzid][:age]
-                    %td= team_data.bugs[bzid][:pm_score]
                     %td
                       %a{ :href => "mailto:#{team_data.bugs[bzid][:owner]}" }= team_data.bugs[bzid][:owner]
-                    %td= team_data.bugs[bzid][:summary]
+                    %td= team_data.bugs[bzid][:summary][0..30].gsub(/\s\w+\s*$/, '...')
       .row
         .col
           %hr
@@ -176,6 +182,6 @@
       $(document).ready(function() {
         $('#team-bugs').DataTable({
           'paging': false,
-          'order': [[0,'desc'],[4,'desc']]
+          'order': [[0,'desc'],[1,'desc'],[2,'desc']]
         });
       } );

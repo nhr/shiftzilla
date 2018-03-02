@@ -199,7 +199,7 @@ module Shiftzilla
         },
         :dyn_report_release_bugs => {
           :label => 'All release bugs by snapshot',
-          :query => "SELECT RB.'Bug ID', RB.'Component', RB.'Target Release', RB.'Assignee', RB.'Summary', RB.'PM Score' FROM RELEASE_BUGS RB WHERE RB.'Snapshot' = date('#{snapshot}')",
+          :query => "SELECT RB.'Bug ID', RB.'Component', RB.'Target Release', RB.'Assignee', RB.'Summary', RB.'PM Score', RB.'External Bugs' FROM RELEASE_BUGS RB WHERE RB.'Snapshot' = date('#{snapshot}')",
         },
         :dyn_report_test_blockers => {
           :label => 'All test blockers for the specified release(s) by snapshot',
@@ -253,6 +253,7 @@ module Shiftzilla
         :summary          => 'Summary',
         :target_release   => 'Target Release',
         :version          => 'Version',
+        :external_bugs    => 'External Bugs',
       }
     end
 

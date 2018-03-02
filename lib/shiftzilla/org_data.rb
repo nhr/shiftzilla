@@ -5,6 +5,8 @@ include Shiftzilla::Helpers
 
 module Shiftzilla
   class OrgData
+    attr_reader :tmp_dir
+
     def initialize(teams,milestones)
       @milestones = milestones
       @org_data   = { '_overall' => Shiftzilla::TeamData.new() }
@@ -15,6 +17,7 @@ module Shiftzilla
       @latest_snap_idx  = 0
       @labels           = {}
       @date_list        = []
+      @tmp_dir          = Shiftzilla::Helpers.tmp_dir
     end
 
     def populate_org
@@ -42,6 +45,7 @@ module Shiftzilla
             owns = row[3].strip
             summ = row[4].strip
             pmsc = row[5].nil? ? 0 : row[5].strip.to_i
+            cust = row[6]
             team = comp_map.has_key?(comp) ? comp_map[comp] : "(?) #{comp}"
             unless @org_data.has_key?(team)
               @org_data[team] = Shiftzilla::TeamData.new()
@@ -58,6 +62,7 @@ module Shiftzilla
               group.bugs[bzid][:summary]      = summ
               group.bugs[bzid][:component]    = comp
               group.bugs[bzid][:pm_score]     = pmsc
+              group.bugs[bzid][:cust_cases]   = cust == 1 ? true : false
               unless group.snaps.has_key?(snapshot)
                 group.snaps[snapshot] = { :ids => [], :tb_ids => [] }
               else
@@ -69,9 +74,15 @@ module Shiftzilla
               if group.series[:no_tgt_rel][midx].nil?
                 group.series[:no_tgt_rel][midx] = 0
               end
+              if group.series[:cust_cases][midx].nil?
+                group.series[:cust_cases][midx] = 0
+              end
               group.series[:total][midx] += 1
               if tgtr == '---'
                 group.series[:no_tgt_rel][midx] += 1
+              end
+              if cust == 1
+                group.series[:cust_cases][midx] += 1
               end
             end
           end
@@ -223,14 +234,15 @@ module Shiftzilla
         bd_graph.data "Ideal Trend",       team_data.series[:ideal], '#93a1a1'
         bd_graph.data "Total",             team_data.series[:total]
         bd_graph.data "No Target Release", team_data.series[:no_tgt_rel]
-        bd_graph.write(File.join(tmp_dir,bd_fname))
+        bd_graph.data "w/ Customer Cases", team_data.series[:cust_cases]
+        bd_graph.write(File.join(@tmp_dir,bd_fname))
 
         nc_fname = "#{team_data.file_prefix}_new_vs_closed.png"
         nc_graph = new_graph(@labels,max_new_closed)
         nc_graph.title = team == '_overall' ? 'AOS Release New vs. Closed' : "#{team} New vs. Closed"
         nc_graph.data "New",    team_data.series[:new]
         nc_graph.data "Closed", team_data.series[:closed]
-        nc_graph.write(File.join(tmp_dir,nc_fname))
+        nc_graph.write(File.join(@tmp_dir,nc_fname))
 
         tb_fname = "#{team_data.file_prefix}_test_blockers.png"
         tb_graph = new_graph(@labels,max_tb)
@@ -238,8 +250,8 @@ module Shiftzilla
         tb_graph.data "Total",  team_data.series[:tb_total]
         tb_graph.data "New",    team_data.series[:tb_new]
         tb_graph.data "Closed", team_data.series[:tb_closed]
-        tb_graph.write(File.join(tmp_dir,tb_fname))
-  
+        tb_graph.write(File.join(@tmp_dir,tb_fname))
+
         bugs      = team_data.bugs
         bugs_ls   = bugs.keys.select{ |b| bugs[b][:last_seen] == latest_snap_date }
         bugs_srt  = bugs_ls.sort_by{ |b| [(bugs[b][:test_blocker] ? 0 : 1),-bugs[b][:age],-bugs[b][:pm_score]] }
@@ -258,13 +270,17 @@ module Shiftzilla
           },
           :milestones => @milestones,
         })
-        File.write(File.join(tmp_dir,team_data.team_file), team_page)
+        File.write(File.join(@tmp_dir,team_data.team_file), team_page)
       end
+    end
+
+    def show_local_reports
+      system("open file://#{@tmp_dir}/index.html")
     end
 
     def publish_reports(ssh)
       system("ssh #{ssh[:host]} 'rm -rf #{ssh[:path]}/*'")
-      system("rsync -avPq #{tmp_dir}/* #{ssh[:host]}:#{ssh[:path]}/")
+      system("rsync -avPq #{@tmp_dir}/* #{ssh[:host]}:#{ssh[:path]}/")
     end
 
     private

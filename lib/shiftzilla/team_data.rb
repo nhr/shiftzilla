@@ -22,6 +22,7 @@ module Shiftzilla
         :tb_total   => [],
         :tb_new     => [],
         :tb_closed  => [],
+        :cust_cases => [],
       }
     end
   end

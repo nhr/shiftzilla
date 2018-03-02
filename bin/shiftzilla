@@ -58,6 +58,7 @@ Description:
 
 Options:
 EOF
+    opt :local_preview, "Don't publish, just show the report locally", :default => false
   end
 when 'purge'
   Trollop::options do
@@ -110,7 +111,7 @@ case cmd
 when 'load'
   load_records
 when 'build'
-  build_reports
+  build_reports(cmd_opts)
 when 'purge'
   purge_records
 when 'summary'
