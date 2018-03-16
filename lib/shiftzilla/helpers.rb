@@ -78,7 +78,6 @@ module Shiftzilla
       unless db_backed_up
         today = Date.today.strftime('%Y-%m-%d')
         tpath = File.join(ARCH_DIR,today)
-        puts "TP: #{tpath}"
         unless Dir.exists?(tpath)
           Dir.mkdir(tpath)
         end

@@ -65,19 +65,12 @@ module Shiftzilla
               group.bugs[bzid][:cust_cases]   = cust == 1 ? true : false
               unless group.snaps.has_key?(snapshot)
                 group.snaps[snapshot] = { :ids => [], :tb_ids => [] }
-              else
-                group.snaps[snapshot][:ids] << bzid
               end
-              if group.series[:total][midx].nil?
-                group.series[:total][midx] = 0
+              group.snaps[snapshot][:ids] << bzid
+              [:no_tgt_rel,:cust_cases].each do |s|
+                next unless group.series[s][midx].nil?
+                group.series[s][midx] = 0
               end
-              if group.series[:no_tgt_rel][midx].nil?
-                group.series[:no_tgt_rel][midx] = 0
-              end
-              if group.series[:cust_cases][midx].nil?
-                group.series[:cust_cases][midx] = 0
-              end
-              group.series[:total][midx] += 1
               if tgtr == '---'
                 group.series[:no_tgt_rel][midx] += 1
               end
@@ -107,9 +100,8 @@ module Shiftzilla
               group.bugs[bzid][:component]    = comp
               unless group.snaps.has_key?(snapshot)
                 group.snaps[snapshot] = { :ids => [], :tb_ids => [] }
-              else
-                group.snaps[snapshot][:tb_ids] << bzid
               end
+              group.snaps[snapshot][:tb_ids] << bzid
               if group.series[:tb_total][midx].nil?
                 group.series[:tb_total][midx] = 0
               end
@@ -122,6 +114,16 @@ module Shiftzilla
           @org_data.values.each do |team_data|
             # Skip to the next team if this team wasn't in this snapshot.
             next if not team_data.snaps.has_key?(snapshot)
+
+            # Set the bug count total for this snapshot
+            uniques = {}
+            team_data.snaps[snapshot][:ids].each do |bzid|
+              uniques[bzid] = 1
+            end
+            team_data.snaps[snapshot][:tb_ids].each do |bzid|
+              uniques[bzid] = 1
+            end
+            team_data.series[:total][midx] = uniques.keys.length
 
             # If this team wasn't in any previous snapshot, set prev_snap and move on
             if team_data.prev_snap.nil?
@@ -202,7 +204,6 @@ module Shiftzilla
     def generate_reports
       milestone_span = business_days_between(@milestones.start.date, @milestones.code_freeze.date) - 4
       @org_data.each do |team,team_data|
-
         # Set scaling of graph lines and project an ideal
         # burndown based on the max bug count.
         max_total     = pick_max([team_data.series[:total]])
