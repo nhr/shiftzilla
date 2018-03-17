@@ -4,13 +4,8 @@ module Shiftzilla
   class Milestones
     def initialize(msrc)
       @milestones = {}
-      [[:start,           'Start'],
-       [:feature_complete,'FeatureComplete'],
-       [:code_freeze,     'CodeFreeze'     ],
-       [:ga,              'GA'             ]].each do |set|
-        key = set[0]
-        src = set[1]
-        @milestones[key] = Shiftzilla::Milestone.new(msrc[src])
+      msrc.each do |key,val|
+        @milestones[key.to_sym] = Shiftzilla::Milestone.new(val)
       end
     end
 

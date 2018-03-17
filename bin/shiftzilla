@@ -8,7 +8,7 @@ require 'trollop'
 include Shiftzilla::Engine
 include Shiftzilla::Helpers
 
-SUB_COMMANDS = %w{help version load build purge triage summary}
+SUB_COMMANDS = %w{help version load build purge triage}
 Trollop::options do
   version Shiftzilla::VERSION
   banner <<-EOF
@@ -18,12 +18,12 @@ Usage:
 Commands:
   load
     Queries Bugzilla and loads records into the local DB
-  summary
-    Print a summary report to the terminal
   build
     Generates reports based local DB contents
   purge
     Removes today's records from the local DB
+  triage
+    Generate a report of teams that need to do bug triage
 
 Options:
 EOF
@@ -72,18 +72,6 @@ Description:
 Options:
 EOF
   end
-when 'summary'
-  Trollop::options do
-    banner <<-EOF
-Usage:
-  #$0 summary <options>
-
-Description:
-  Summarizes the overall status
-
-Options:
-EOF
-  end
 when 'triage'
   Trollop::options do
     banner <<-EOF
@@ -114,8 +102,6 @@ when 'build'
   build_reports(cmd_opts)
 when 'purge'
   purge_records
-when 'summary'
-  print_summary
 when 'triage'
   triage_report
 end
