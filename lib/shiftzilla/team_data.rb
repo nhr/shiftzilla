@@ -1,29 +1,35 @@
+require 'shiftzilla/release_data'
+
 module Shiftzilla
   class TeamData
-    attr_accessor :team, :team_title, :team_file, :file_prefix, :snaps, :bugs, :bug_avg_age, :tb_avg_age, :prev_snap, :last_seen, :series
 
-    def initialize(team = nil)
-      @team        = team
-      @team_title  = ''
-      @team_file   = ''
-      @file_prefix = ''
-      @snaps       = {}
-      @bugs        = {}
-      @bug_avg_age = 0
-      @tb_avg_age  = 0
-      @prev_snap   = nil
-      @last_seen   = nil
-      @series      = {
-        :ideal      => [],
-        :total      => [],
-        :no_tgt_rel => [],
-        :new        => [],
-        :closed     => [],
-        :tb_total   => [],
-        :tb_new     => [],
-        :tb_closed  => [],
-        :cust_cases => [],
-      }
+    def initialize(tname)
+      @name         = tname
+      @release_data = {}
+    end
+
+    def title
+      @title ||= (@name == '_overall' ? 'Atomic / OpenShift' : @name)
+    end
+
+    def prefix
+      @prefix ||= (@name == '_overall' ? "all_aos" : "team_#{@name.tr(' ?()', '')}")
+    end
+
+    def file
+      @file ||= "#{ @name == '_overall' ? 'index' : prefix }.html"
+    end
+
+    def has_release_data?(release)
+      @release_data.has_key?(release.name)
+    end
+
+    def get_release_data(release)
+      rname = release.name
+      unless @release_data.has_key?(rname)
+        @release_data[rname] = Shiftzilla::ReleaseData.new(release)
+      end
+      @release_data[rname]
     end
   end
 end

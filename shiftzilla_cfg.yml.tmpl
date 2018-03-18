@@ -9,11 +9,6 @@ Teams:
 Groups:
   - id: 0
     lead: Sarah Connors <sconnors@timetravel.org>
-Milestones:
-  - Start: 'YYYY-MM-DD'
-  - FeatureComplete: 'YYYY-MM-DD'
-  - CodeFreeze: 'YYYY-MM-DD'
-  - GA: 'YYYY-MM-DD'
 Sources: # Info about saved bugzilla queries and the tables to store them in
   source_keyword:
     search: <Bugzilla saved report id>
@@ -24,8 +19,23 @@ Sources: # Info about saved bugzilla queries and the tables to store them in
       - <bugzilla field id>
       - <bugzilla field id>
 Releases: # Target Release values to include in queries
-  - 0.0.1
-  - 0.0.2
+  - name: 0.0.1
+    targets:
+      - 0.0.1
+      - 0.0.1.a
+    milestones:
+      start:            'YYYY-MM-DD'
+      feature_complete: 'YYYY-MM-DD'
+      code_freeze:      'YYYY-MM-DD'
+      ga:               'YYYY-MM-DD'
+  - name: 0.0.2
+    targets:
+      - 0.0.2
+    milestones:
+      start:            'YYYY-MM-DD'
+      feature_complete: 'YYYY-MM-DD'
+      code_freeze:      'YYYY-MM-DD'
+      ga:               'YYYY-MM-DD'
 SSH:
   host: <remote host>
   path: <absolute path on remote host>

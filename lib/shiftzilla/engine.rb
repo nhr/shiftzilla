@@ -84,87 +84,52 @@ module Shiftzilla
       puts "Purged #{sources.length} tables."
     end
 
-    def print_summary
-      table = []
-      lists = []
-      summary_queries.each do |q|
-        query = queries(q)
-        label = query[:label]
-        list  = []
-        dbh.execute(query[:query]) do |row|
-          if row.length == 1
-            table << [label,row[0]]
-          else
-            list << row
-          end
-        end
-        if list.length > 0
-          lists << [label,list]
-        end
-      end
-      tbltxt = Terminal::Table.new do |t|
-        t.rows = table
-      end
-      puts "Shiftzilla Summary\n#{tbltxt}"
-      lists.each do |list|
-        puts "\n#{list[0]}:"
-        list[1].each do |row|
-          puts "- #{row.join(' || ')}"
-        end
-      end
-    end
-
     def triage_report
-      lifespans = {}
-      snapshots.each do |snapshot|
-        snap_query = queries(:dyn_no_tgt_release_by_snap,snapshot)[:query]
-        dbh.execute(snap_query) do |row|
-          bzid      = row[0]
-          component = row[1]
-          owner     = row[2]
-          summary   = row[3]
-          if not lifespans.has_key?(bzid)
-            lifespans[bzid] = { :first_seen => Date.parse(snapshot) }
+      org_data = Shiftzilla::OrgData.new(shiftzilla_config)
+      org_data.populate_releases
+      teams      = org_data.get_ordered_teams
+      no_tgt_rel = shiftzilla_config.releases[-1]
+
+      teams.each do |tname|
+        next if tname == '_overall'
+        rdata = org_data.get_release_data(tname,no_tgt_rel)
+        next if rdata.nil? or rdata.snaps.empty?
+        recipients = {}
+        team  = shiftzilla_config.team(tname)
+        unless team.nil?
+          recipients[team.lead] = 1
+          recipients[team.group.lead] = 1
+        end
+        bzids = rdata.snaps[rdata.latest_snap].bug_ids
+        next if bzids.length == 0
+        bugs = rdata.bugs
+        table = Terminal::Table.new do |t|
+          t << ['URL','Age','Component','Owner','Summary']
+          t << :separator
+          bzids.sort_by{ |b| [bugs[b].first_seen,bugs[b].component] }.each do |bzid|
+            bug = bugs[bzid]
+            if team.nil?
+              recipients[bug.owner] = 1
+            end
+            t << [
+              bug_url(bzid),
+              bug.age,
+              bug.component,
+              bug.owner,
+              bug.summary
+            ]
           end
-          lifespans[bzid][:team]      = component_team_map[component]
-          lifespans[bzid][:component] = component
-          lifespans[bzid][:owner]     = owner
-          lifespans[bzid][:summary]   = "#{summary.slice(0, 25)}..."
-          lifespans[bzid][:last_seen] = snapshot
         end
+        puts "#{tname}#{team.nil? ? ' Component' : ' Team'} - #{bzids.length} bugs with no Target Release"
+        puts "To: #{recipients.keys.sort.join(',')}"
+        puts "#{table}\n\n"
       end
-      recipients = {}
-      in_cc      = {}
-      table      = Terminal::Table.new do |t|
-        t << ['URL','Age','Team','Component','Owner','Summary']
-        t << :separator
-        lifespans.sort_by{ |k,v| [(v[:team].nil? ? '!' : v[:team].name),v[:component],v[:first_seen]] }.each do |entry|
-          info = entry[1]
-          next unless info[:last_seen] == latest_snapshot
-          recipients[info[:owner]] = 1
-          in_cc[info[:team].lead] = 1
-          in_cc[info[:team].group.lead] = 1
-          t << [
-            bug_url(entry[0]),
-            (latest_snap_date - info[:first_seen]).to_i,
-            info[:team].name,
-            info[:component],
-            info[:owner],
-            info[:summary]
-          ]
-        end
-      end
-      puts "\nSubject: Bugs with no Target Release"
-      puts "\nThe following bugs need a be assigned to a target release:"
-      puts table
-      puts "\nRecipients\n#{recipients.keys.sort.join(',')}"
-      puts "\nIn CC\n#{in_cc.keys.sort.join(',')}"
     end
 
     def build_reports(options)
-      org_data = Shiftzilla::OrgData.new(teams,milestones)
-      org_data.populate_org
-      org_data.set_totals
+      org_data = Shiftzilla::OrgData.new(shiftzilla_config)
+      org_data.populate_releases
+      org_data.build_series
       org_data.generate_reports
       if options[:local_preview]
         org_data.show_local_reports
@@ -191,10 +156,6 @@ module Shiftzilla
 
     def sources
       @sources ||= shiftzilla_config.sources
-    end
-
-    def milestones
-      @milestones ||= shiftzilla_config.milestones
     end
 
     def releases
