@@ -26,61 +26,59 @@
             %span.text-muted= tname
           \|
           %small
-            %span.text-muted= latest_overall
+            %span.text-muted= latest_snapshot
       .row
         .col-6
           %a{ :name => 'top' }
-          - if tname != '_overall' and not tinfo.nil?
+          - if tname != '_overall' and not tinfo.nil? and not tinfo.ad_hoc?
             %h5 Team Info
             %ul
               %li= "Team Lead: #{tinfo.lead}"
               %li= "Group Lead: #{tinfo.group.lead}"
+              - if tinfo.components.length > 0
+                %li= "BZ Component(s): #{tinfo.components.join(', ')}"
           %h5= "#{tdata.title} Summary"
           %table.table.table-hover.table-sm
             %tr
               %td Release
               - releases.each do |r|
-                %td.text-right
-                  - if r[:bug_ids].length > 0
-                    %a{ :href => "#team-bugs-#{r[:release].token}" }= r[:release].name
-                  - else
-                    = r[:release].name
+                %td.text-right= r[:release].name
             %tr
               %td Total
               - releases.each do |r|
-                %td.text-right= r[:rdata].snaps[r[:rdata].latest_snap].total_bugs
+                %td.text-right= r[:snapdata].total_bugs
             %tr
               %td w/ Customer Cases
               - releases.each do |r|
-                %td.text-right= r[:rdata].snaps[r[:rdata].latest_snap].total_cc
+                %td.text-right= r[:snapdata].total_cc
             %tr
               %td Avg. Bug Age
               - releases.each do |r|
-                %td.text-right= r[:rdata].bug_avg_age
+                %td.text-right= r[:bug_avg_age]
             %tr
               %td Avg. Test Blocker Age
               - releases.each do |r|
-                %td.text-right= r[:rdata].tb_avg_age
+                %td.text-right= r[:tb_avg_age]
             %tr
               %td New Today
               - releases.each do |r|
-                %td.text-right= r[:rdata].snaps[r[:rdata].latest_snap].new_bugs
+                %td.text-right= r[:snapdata].new_bugs
             %tr
               %td Closed Yesterday
               - releases.each do |r|
-                %td.text-right= r[:rdata].snaps[r[:rdata].latest_snap].total_cc
+                %td.text-right= r[:snapdata].total_cc
             %tr
               %td Test Blockers
               - releases.each do |r|
-                %td.text-right= r[:rdata].snaps[r[:rdata].latest_snap].total_tb
+                %td.text-right= r[:snapdata].total_tb
             %tr
               %td New Blockers Today
               - releases.each do |r|
-                %td.text-right= r[:rdata].snaps[r[:rdata].latest_snap].new_tb
+                %td.text-right= r[:snapdata].new_tb
             %tr
               %td Closed Blockers Yesterday
               - releases.each do |r|
-                %td.text-right= r[:rdata].snaps[r[:rdata].latest_snap].closed_tb
+                %td.text-right= r[:snapdata].closed_tb
           %h5 Breakdown By Team
           %table.table.table-hover.table-sm
             %tr
@@ -99,7 +97,9 @@
         .col-6
           #accordion
             - first_release = true
-            - releases.each do |r|
+            - chart_order.each do |cidx|
+              - r = releases[cidx]
+              - next if r.nil? or r[:release].built_in? or r[:no_rdata]
               .card
                 %div{ :class => 'card-header', :id => "heading-#{r[:release].token}"}
                   %h5.mb-0
@@ -111,17 +111,16 @@
                     %img{ :class => 'img-fluid', :src => r[:charts][:burndown] }
                     %img{ :class => 'img-fluid', :src => r[:charts][:new_closed] }
                     %img{ :class => 'img-fluid', :src => r[:charts][:blockers] }
-      - releases.each do |r|
-        - next unless r[:bug_ids].length > 0
+      - if all_bugs.length > 0
         .row
           .col
             %hr
-            %a{ :name => "TeamBugs-#{r[:release].token}" }
+            %a{ :name => "TeamBugs-All" }
             %h5
-              = "Team Bugs #{r[:release].name}"
+              = "Team Bugs (#{all_bugs.length} total)"
               %small
                 %a{ :href => '#top' } Back to top
-            %table.table.table-sm.table-striped.display{ :id => "team-bugs-#{r[:release].token}" }
+            %table.table.table-sm.table-striped.display{ :id => "team-bugs-all" }
               %thead
                 %tr
                   %th
@@ -130,24 +129,26 @@
                     %a{ :href => 'https://mojo.redhat.com/docs/DOC-1159309', :target => '_blank' } PM
                   %th
                     %abbr{ :title => 'Has attached customer cases?'} CC
+                  %th Tgt Release
                   %th Bug
                   %th Component
                   %th Age
                   %th Owner
                   %th Summary
               %tbody
-                - r[:bug_ids].each do |bzid|
+                - all_bugs.each do |b|
                   %tr
-                    %td= r[:rdata].bugs[bzid].test_blocker ? "<span class='badge badge-danger'>TB</span>" : ''
-                    %td= r[:rdata].bugs[bzid].pm_score
-                    %td= r[:rdata].bugs[bzid].cust_cases ? "<span class='badge badge-warning'>CC</span>" : ''
+                    %td= b.test_blocker ? "<span class='badge badge-danger'>TB</span>" : ''
+                    %td= b.pm_score
+                    %td= b.cust_cases ? "<span class='badge badge-warning'>CC</span>" : ''
+                    %td(data-order="#{b.semver}")= b.tgt_release
                     %td
-                      %a{ :href => "#{bug_url}#{bzid}", :target => '_blank' }= bzid
-                    %td= r[:rdata].bugs[bzid].component
-                    %td= r[:rdata].bugs[bzid].age
+                      %a{ :href => "#{bug_url}#{b.id}", :target => '_blank' }= b.id
+                    %td= b.component
+                    %td= b.age
                     %td
-                      %a{ :href => "mailto:#{r[:rdata].bugs[bzid].owner}" }= r[:rdata].bugs[bzid].owner
-                    %td= r[:rdata].bugs[bzid].summary
+                      %a{ :href => "mailto:#{b.owner}" }= b.owner
+                    %td= b.summary
 
     / Optional JavaScript
     / jQuery first, then Popper.js, then Bootstrap JS
@@ -165,9 +166,11 @@
     %script{ :src => 'https://code.jquery.com/jquery-1.12.4.js' }
     %script{ :src => 'https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js' }
     %script{ :src => 'https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap4.min.js' }
-    %script{ :type => 'text/javascript' }
-      $(document).ready(function() {
-      - releases.each do |r|
-        - next unless r[:bug_ids].length > 0
-        = "$('#team-bugs-#{r[:release].token}').DataTable({ 'paging': false, 'order': [[0,'desc'],[1,'desc'],[2,'desc']] });"
-      } );
+    - if all_bugs.length > 0
+      :javascript
+        $(document).ready(function() {
+          $('#team-bugs-all').DataTable({
+            'paging': false,
+            'order': [[0,'desc'],[1,'desc'],[2,'desc']]
+          });
+        });

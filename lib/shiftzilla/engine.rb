@@ -88,7 +88,7 @@ module Shiftzilla
       org_data = Shiftzilla::OrgData.new(shiftzilla_config)
       org_data.populate_releases
       teams      = org_data.get_ordered_teams
-      no_tgt_rel = shiftzilla_config.releases[-1]
+      no_tgt_rel = shiftzilla_config.releases[0]
 
       teams.each do |tname|
         next if tname == '_overall'
@@ -96,11 +96,11 @@ module Shiftzilla
         next if rdata.nil? or rdata.snaps.empty?
         recipients = {}
         team  = shiftzilla_config.team(tname)
-        unless team.nil?
+        unless team.nil? or team.ad_hoc?
           recipients[team.lead] = 1
           recipients[team.group.lead] = 1
         end
-        bzids = rdata.snaps[rdata.latest_snap].bug_ids
+        bzids = rdata.snaps.has_key?(latest_snapshot) ? rdata.snaps[latest_snapshot].bug_ids : []
         next if bzids.length == 0
         bugs = rdata.bugs
         table = Terminal::Table.new do |t|

@@ -1,3 +1,4 @@
+require 'shiftzilla/bug'
 require 'shiftzilla/helpers'
 require 'shiftzilla/team_data'
 
@@ -5,7 +6,7 @@ include Shiftzilla::Helpers
 
 module Shiftzilla
   class OrgData
-    attr_reader :tmp_dir, :latest_snapshot
+    attr_reader :tmp_dir
 
     def initialize(config)
       @config          = config
@@ -13,7 +14,6 @@ module Shiftzilla
       @releases        = config.releases
       @tmp_dir         = Shiftzilla::Helpers.tmp_dir
       @org_data        = { '_overall' => Shiftzilla::TeamData.new('_overall') }
-      @latest_snapshot = nil
     end
 
     def populate_releases
@@ -22,9 +22,8 @@ module Shiftzilla
         next if snapdate < @config.earliest_milestone
         break if snapdate > @config.latest_milestone
         break if snapdate > Date.today
-        @latest_snapshot = snapshot
 
-        dbh.execute(all_bugs_query(@releases,snapshot)) do |row|
+        dbh.execute(all_bugs_query(snapshot)) do |row|
           bzid = row[0].strip
           comp = row[1].strip
           tgtr = row[2].strip
@@ -35,21 +34,36 @@ module Shiftzilla
           pmsc = row[7].nil? ? '0' : row[7].strip
           cust = row[8].nil? ? 0 : row[8]
 
-          # Find associated release or skip this record. We filter
-          # the query so skips here should never happen.
-          release = @config.release_by_target(tgtr)
-          next if release.nil?
+          # Package up bug data
+          binfo = {
+            :snapdate     => snapdate,
+            :test_blocker => keyw.include?('TestBlocker'),
+            :owner        => owns,
+            :summary      => summ,
+            :component    => comp,
+            :pm_score     => pmsc,
+            :cust_cases   => (cust == 1),
+            :tgt_release  => tgtr,
+          }
+
+          tgt_release = @config.release_by_target(tgtr)
+          all_release = @config.release('All')
 
           # If this component isn't mapped to a team, stub out a fake team.
           tname = comp_map.has_key?(comp) ? comp_map[comp] : "(?) #{comp}"
           unless @org_data.has_key?(tname)
+            @config.add_ad_hoc_team({ 'name' => tname, 'components' => [comp] })
             @org_data[tname] = Shiftzilla::TeamData.new(tname)
           end
-          team_rdata = @org_data[tname].get_release_data(release)
-          over_rdata = @org_data['_overall'].get_release_data(release)
+
+          team_rdata = tgt_release.nil? ? nil : @org_data[tname].get_release_data(tgt_release)
+          team_adata = @org_data[tname].get_release_data(all_release)
+          over_rdata = tgt_release.nil? ? nil : @org_data['_overall'].get_release_data(tgt_release)
+          over_adata = @org_data['_overall'].get_release_data(all_release)
 
           # Do some bean counting
-          [over_rdata,team_rdata].each do |group|
+          [over_rdata,team_rdata,over_adata,team_adata].each do |group|
+            next if group.nil?
             snapdata = group.get_snapdata(snapshot)
             if group.first_snap.nil?
               group.first_snap     = snapshot
@@ -58,16 +72,6 @@ module Shiftzilla
             group.latest_snap     = snapshot
             group.latest_snapdate = snapdate
 
-            # Create / update bug data
-            binfo = {
-              :snapdate     => snapdate,
-              :test_blocker => keyw.include?('TestBlocker'),
-              :owner        => owns,
-              :summary      => summ,
-              :component    => comp,
-              :pm_score     => pmsc,
-              :cust_cases   => (cust == 1),
-            }
             bug = group.add_or_update_bug(bzid,binfo)
 
             # Add info to the snapshot
@@ -137,7 +141,13 @@ module Shiftzilla
           @org_data[tname] = Shiftzilla::TeamData.new(tname)
         end
         tdata = @org_data[tname]
-        @team_files << { :tname => tdata.title, :file => tdata.file, :releases => {} }
+        tinfo = @config.team(tname)
+
+        @team_files << {
+          :tname          => tdata.title,
+          :file           => tdata.file,
+          :releases       => {},
+        }
 
         @releases.each do |release|
           rname     = release.name
@@ -146,11 +156,14 @@ module Shiftzilla
             @team_files[-1][:releases][release.name] = bug_total
             next
           end
-          rdata     = tdata.get_release_data(release)
-          bug_total = rdata.latest_snap.nil? ? 0 : rdata.snaps[rdata.latest_snap].total_bugs
+          rdata = tdata.get_release_data(release)
+          if rdata.snaps.has_key?(latest_snapshot)
+            bug_total = rdata.snaps[latest_snapshot].total_bugs
+          end
           @team_files[-1][:releases][release.name] = bug_total
 
           next if rdata.first_snap.nil? and not release.uses_milestones?
+          next if release.built_in?
 
           rdata.populate_series
         end
@@ -158,58 +171,77 @@ module Shiftzilla
     end
 
     def generate_reports
+      all_release = @config.release('All')
       @ordered_teams.each do |tname|
-        tdata = @org_data[tname]
         tinfo = @config.team(tname)
+        tdata = @org_data[tname]
+
         team_pinfo = {
-          :tname          => tdata.title,
-          :tinfo          => tinfo,
-          :tdata          => tdata,
-          :team_files     => @team_files,
-          :bug_url        => BZ_URL,
-          :latest_overall => @latest_snapshot,
-          :releases       => [],
+          :tname           => tdata.title,
+          :tinfo           => tinfo,
+          :tdata           => tdata,
+          :team_files      => @team_files,
+          :bug_url         => BZ_URL,
+          :chart_order     => ((1..(@releases.length - 1)).to_a << 0),
+          :releases        => [],
+          :latest_snapshot => latest_snapshot,
+          :all_bugs        => [],
         }
+
         @releases.each do |release|
-          next unless tdata.has_release_data?(release)
           rname = release.name
-          rdata = tdata.get_release_data(release)
+          rdata = tdata.has_release_data?(release) ? tdata.get_release_data(release) : nil
 
           bd_fname = "release_#{rname}_#{tdata.prefix}_burndown.png"
-          bd_graph = new_graph(rdata.labels,rdata.max_total)
-          bd_graph.title = tname == '_overall' ? "AOS Release Bug Burndown for #{rname}" : "#{tname} Bug Burndown for #{rname}"
-          bd_graph.data "Ideal Trend",       rdata.series[:ideal], '#93a1a1'
-          bd_graph.data "Total",             rdata.series[:total_bugs]
-          bd_graph.data "w/ Customer Cases", rdata.series[:total_cc]
-          bd_graph.write(File.join(@tmp_dir,bd_fname))
-
           nc_fname = "release_#{rname}_#{tdata.prefix}_new_vs_closed.png"
-          nc_graph = new_graph(rdata.labels,rdata.max_new_closed)
-          nc_graph.title = tname == '_overall' ? "AOS Release New vs. Closed for #{rname}" : "#{tname} New vs. Closed for #{rname}"
-          nc_graph.data "New",    rdata.series[:new_bugs]
-          nc_graph.data "Closed", rdata.series[:closed_bugs]
-          nc_graph.write(File.join(@tmp_dir,nc_fname))
-
           tb_fname = "release_#{rname}_#{tdata.prefix}_test_blockers.png"
-          tb_graph = new_graph(rdata.labels,rdata.max_tb)
-          tb_graph.title = tname == '_overall' ? "AOS Release Test Blockers for #{rname}" : "#{tname} Test Blockers for #{rname}"
-          tb_graph.data "Total",  rdata.series[:total_tb]
-          tb_graph.data "New",    rdata.series[:new_tb]
-          tb_graph.data "Closed", rdata.series[:closed_tb]
-          tb_graph.write(File.join(@tmp_dir,tb_fname))
 
-          bugs     = rdata.bugs
-          bugs_srt = rdata.snaps[rdata.latest_snap].bug_ids.sort_by{ |b| [(bugs[b].test_blocker ? 0 : 1),-bugs[b].age,-bugs[b].pm_score] }
+          # Don't make charts for '---' and 'All' releases
+          unless release.built_in? or rdata.nil?
+            bd_graph = new_graph(rdata.labels,rdata.max_total)
+            bd_graph.title = tname == '_overall' ? "AOS Release Bug Burndown for #{rname}" : "#{tname} Bug Burndown for #{rname}"
+            bd_graph.data "Ideal Trend",       rdata.series[:ideal], '#93a1a1'
+            bd_graph.data "Total",             rdata.series[:total_bugs]
+            bd_graph.data "w/ Customer Cases", rdata.series[:total_cc]
+            bd_graph.write(File.join(@tmp_dir,bd_fname))
+
+            nc_graph = new_graph(rdata.labels,rdata.max_new_closed)
+            nc_graph.title = tname == '_overall' ? "AOS Release New vs. Closed for #{rname}" : "#{tname} New vs. Closed for #{rname}"
+            nc_graph.data "New",    rdata.series[:new_bugs]
+            nc_graph.data "Closed", rdata.series[:closed_bugs]
+            nc_graph.write(File.join(@tmp_dir,nc_fname))
+
+            tb_graph = new_graph(rdata.labels,rdata.max_tb)
+            tb_graph.title = tname == '_overall' ? "AOS Release Test Blockers for #{rname}" : "#{tname} Test Blockers for #{rname}"
+            tb_graph.data "Total",  rdata.series[:total_tb]
+            tb_graph.data "New",    rdata.series[:new_tb]
+            tb_graph.data "Closed", rdata.series[:closed_tb]
+            tb_graph.write(File.join(@tmp_dir,tb_fname))
+          end
+
+          snapdata = nil
+          if not rdata.nil? and rdata.snaps.has_key?(latest_snapshot)
+            snapdata = rdata.snaps[latest_snapshot]
+          else
+            snapdata = Shiftzilla::SnapData.new(latest_snapshot)
+          end
+
           team_pinfo[:releases] << {
-            :release    => release,
-            :rdata      => rdata,
-            :bug_ids    => bugs_srt,
-            :charts     => {
+            :release     => release,
+            :snapdata    => snapdata,
+            :no_rdata    => rdata.nil?,
+            :bug_avg_age => (rdata.nil? ? 0 : rdata.bug_avg_age),
+            :tb_avg_age  => (rdata.nil? ? 0 : rdata.tb_avg_age),
+            :charts      => {
               :burndown   => bd_fname,
               :new_closed => nc_fname,
               :blockers   => tb_fname,
             },
           }
+
+          if rname == 'All'
+            team_pinfo[:all_bugs] = snapdata.bug_ids.map{ |id| rdata.bugs[id] }
+          end
         end
         team_page = haml_engine.render(Object.new,team_pinfo)
         File.write(File.join(@tmp_dir,tdata.file), team_page)

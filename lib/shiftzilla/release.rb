@@ -4,11 +4,12 @@ module Shiftzilla
   class Release
     attr_reader :name, :targets, :milestones, :default, :token
 
-    def initialize(release)
+    def initialize(release,builtin=false)
       @name       = release['name']
       @token      = @name.tr(' .', '-')
       @targets    = release['targets']
       @default    = release.has_key?('default') ? release['default'] : false
+      @builtin    = builtin
       @milestones = nil
       if release.has_key?('milestones')
         @milestones = Shiftzilla::Milestones.new(release['milestones'])
@@ -17,6 +18,10 @@ module Shiftzilla
 
     def uses_milestones?
       return @milestones.nil? ? false : true
+    end
+
+    def built_in?
+      @builtin
     end
 
     def no_tgt_rel?

@@ -12,7 +12,6 @@ module Shiftzilla
       @teams    = []
       @groups   = []
       @sources  = []
-      @releases = []
       group_map = {}
       cfg_file['Groups'].each do |group|
         gobj = Shiftzilla::Group.new(group)
@@ -25,11 +24,12 @@ module Shiftzilla
       cfg_file['Sources'].each do |sid,sinfo|
         @sources << Shiftzilla::Source.new(sid,sinfo)
       end
+      # Always track a release for bugs with no target release
+      @releases = [Shiftzilla::Release.new({ 'name' => '"---"', 'targets' => ['---'] },true)]
       cfg_file['Releases'].each do |release|
         @releases << Shiftzilla::Release.new(release)
       end
-      # Always track a release for bugs with no target release
-      @releases << Shiftzilla::Release.new({ 'name' => 'No Tgt Rel', 'targets' => ['---'] })
+      @releases << Shiftzilla::Release.new({ 'name' => 'All', 'targets' => [] },true)
       @ssh = {
         :host => cfg_file['SSH']['host'],
         :path => cfg_file['SSH']['path'],
@@ -46,11 +46,15 @@ module Shiftzilla
     end
 
     def team(tname)
-      teams.select{ |t| t.name == tname }[0]
+      @teams.select{ |t| t.name == tname }[0]
+    end
+
+    def add_ad_hoc_team(tinfo)
+      @teams << Shiftzilla::Team.new(tinfo,{},true)
     end
 
     def release(rname)
-      releases.select{ |r| r.name == rname }[0]
+      @releases.select{ |r| r.name == rname }[0]
     end
 
     def release_by_target(tgt)

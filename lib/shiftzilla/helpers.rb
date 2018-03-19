@@ -107,10 +107,20 @@ module Shiftzilla
       end
     end
 
-    def all_bugs_query(releases,snapshot)
-      tclause = target_clause(releases)
-      tfilter = tclause == '' ? '' : " AND AB.'Target Release' #{tclause}"
-      return "SELECT AB.'Bug ID', AB.'Component', AB.'Target Release', AB.'Assignee', AB.'Status', AB.'Summary', AB.'Keywords', AB.'PM Score', AB.'External Bugs' FROM ALL_BUGS AB WHERE AB.'Snapshot' = date('#{snapshot}')#{tfilter}"
+    def all_bugs_query(snapshot)
+      return "SELECT AB.'Bug ID', AB.'Component', AB.'Target Release', AB.'Assignee', AB.'Status', AB.'Summary', AB.'Keywords', AB.'PM Score', AB.'External Bugs' FROM ALL_BUGS AB WHERE AB.'Snapshot' = date('#{snapshot}')"
+    end
+
+    def component_bugs_query(components,snapshot)
+      rclause = list_clause(components)
+      rfilter = rclause == '' ? '' : " AND AB.'Component' #{rclause}"
+      return "SELECT AB.'Bug ID', AB.'Component', AB.'Target Release', AB.'Assignee', AB.'Status', AB.'Summary', AB.'Keywords', AB.'PM Score', AB.'External Bugs' FROM ALL_BUGS AB WHERE AB.'Snapshot' = date('#{snapshot}')#{rfilter} ORDER BY AB.'Target Release' DESC"
+    end
+
+    def component_bugs_count(components,snapshot)
+      rclause = list_clause(components)
+      rfilter = rclause == '' ? '' : " AND AB.'Component' #{rclause}"
+      return "SELECT count(*) FROM ALL_BUGS AB WHERE AB.'Snapshot' = date('#{snapshot}')#{rfilter}"
     end
 
     def all_snapshots
@@ -121,6 +131,10 @@ module Shiftzilla
         end
         all_snapshots
       end
+    end
+
+    def latest_snapshot
+      all_snapshots[-1]
     end
 
     def field_map
@@ -139,15 +153,13 @@ module Shiftzilla
 
     private
 
-    def target_clause(releases)
-      return '' if releases.nil? or releases.length == 0
-      targets = releases.map{ |r| r.targets }.flatten.uniq
-      return '' if targets.length == 0
-      if targets.length > 1
-        target_list = targets.map{ |t| "'#{t}'" }.join(',')
-        return "IN (#{target_list})"
+    def list_clause(list)
+      return '' if list.length == 0
+      if list.length > 1
+        stmt = list.map{ |t| "'#{t}'" }.join(',')
+        return "IN (#{stmt})"
       end
-      return "== '#{targets}''"
+      return "== '#{list[0]}'"
     end
 
     def db_backed_up
