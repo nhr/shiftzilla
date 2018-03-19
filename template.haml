@@ -79,7 +79,7 @@
               %td Closed Blockers Yesterday
               - releases.each do |r|
                 %td.text-right= r[:snapdata].closed_tb
-          %h5 Breakdown By Team
+          %h5 Totals By Team
           %table.table.table-hover.table-sm
             %tr
               %td Team
@@ -126,10 +126,10 @@
                   %th
                     %abbr{ :title => 'Test Blocker?' } TB
                   %th
-                    %a{ :href => 'https://mojo.redhat.com/docs/DOC-1159309', :target => '_blank' } PM
+                    %abbr{ :title => 'See https://mojo.redhat.com/docs/DOC-1159309' } PM
                   %th
                     %abbr{ :title => 'Has attached customer cases?'} CC
-                  %th Tgt Release
+                  %th Target
                   %th Bug
                   %th Component
                   %th Age
