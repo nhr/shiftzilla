@@ -23,6 +23,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'fileutils',      '~> 1.0', '>= 1.0.2'
   spec.add_dependency 'haml',           '~> 5.0', '>= 5.0.4'
   spec.add_dependency 'highline',       '~> 1.7', '>= 1.7.10'
+  spec.add_dependency 'json',           '~> 2.1'
   spec.add_dependency 'sqlite3',        '~> 1.3', '>= 1.3.13'
   spec.add_dependency 'terminal-table', '~> 1.8'
   spec.add_dependency 'trollop',        '~> 2.1', '>= 2.1.2'
