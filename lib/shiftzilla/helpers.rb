@@ -1,5 +1,4 @@
 require 'fileutils'
-require 'gruff'
 require 'haml'
 require 'fileutils'
 require 'sqlite3'
@@ -8,16 +7,17 @@ require 'yaml'
 
 module Shiftzilla
   module Helpers
-    BZ_URL    = 'https://bugzilla.redhat.com/show_bug.cgi?id='
-    SZA_DIR   = File.join(ENV['HOME'],'.shiftzilla')
-    ARCH_DIR  = File.join(SZA_DIR,'archive')
-    CFG_FILE  = File.join(SZA_DIR,'shiftzilla_cfg.yml')
-    DB_FNAME  = 'shiftzilla.sqlite'
-    DB_FPATH  = File.join(SZA_DIR,DB_FNAME)
-    THIS_PATH = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
-    HAML_TMPL = File.expand_path(File.join(File.dirname(THIS_PATH), '../../template.haml'))
-    CFG_TMPL  = File.expand_path(File.join(File.dirname(THIS_PATH), '../../shiftzilla_cfg.yml.tmpl'))
-    SQL_TMPL  = File.expand_path(File.join(File.dirname(THIS_PATH), '../../shiftzilla.sql.tmpl'))
+    BZ_URL     = 'https://bugzilla.redhat.com/show_bug.cgi?id='
+    SZA_DIR    = File.join(ENV['HOME'],'.shiftzilla')
+    ARCH_DIR   = File.join(SZA_DIR,'archive')
+    CFG_FILE   = File.join(SZA_DIR,'shiftzilla_cfg.yml')
+    DB_FNAME   = 'shiftzilla.sqlite'
+    DB_FPATH   = File.join(SZA_DIR,DB_FNAME)
+    THIS_PATH  = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
+    HAML_TMPL  = File.expand_path(File.join(File.dirname(THIS_PATH), '../../template.haml'))
+    CFG_TMPL   = File.expand_path(File.join(File.dirname(THIS_PATH), '../../shiftzilla_cfg.yml.tmpl'))
+    SQL_TMPL   = File.expand_path(File.join(File.dirname(THIS_PATH), '../../shiftzilla.sql.tmpl'))
+    VENDOR_DIR = File.expand_path(File.join(File.dirname(THIS_PATH), '../../vendor'))
 
     GRAPH_DIMENSIONS = '800x400'
     GRAPH_THEME      = {

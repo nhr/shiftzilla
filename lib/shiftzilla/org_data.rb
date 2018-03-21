@@ -1,3 +1,4 @@
+require 'json'
 require 'shiftzilla/bug'
 require 'shiftzilla/helpers'
 require 'shiftzilla/team_data'
@@ -189,36 +190,8 @@ module Shiftzilla
         }
 
         @releases.each do |release|
-          rname = release.name
-          rdata = tdata.has_release_data?(release) ? tdata.get_release_data(release) : nil
-
-          bd_fname = "release_#{rname}_#{tdata.prefix}_burndown.png"
-          nc_fname = "release_#{rname}_#{tdata.prefix}_new_vs_closed.png"
-          tb_fname = "release_#{rname}_#{tdata.prefix}_test_blockers.png"
-
-          # Don't make charts for '---' and 'All' releases
-          unless release.built_in? or rdata.nil?
-            bd_graph = new_graph(rdata.labels,rdata.max_total)
-            bd_graph.title = tname == '_overall' ? "AOS Release Bug Burndown for #{rname}" : "#{tname} Bug Burndown for #{rname}"
-            bd_graph.data "Ideal Trend",       rdata.series[:ideal], '#93a1a1'
-            bd_graph.data "Total",             rdata.series[:total_bugs]
-            bd_graph.data "w/ Customer Cases", rdata.series[:total_cc]
-            bd_graph.write(File.join(@tmp_dir,bd_fname))
-
-            nc_graph = new_graph(rdata.labels,rdata.max_new_closed)
-            nc_graph.title = tname == '_overall' ? "AOS Release New vs. Closed for #{rname}" : "#{tname} New vs. Closed for #{rname}"
-            nc_graph.data "New",    rdata.series[:new_bugs]
-            nc_graph.data "Closed", rdata.series[:closed_bugs]
-            nc_graph.write(File.join(@tmp_dir,nc_fname))
-
-            tb_graph = new_graph(rdata.labels,rdata.max_tb)
-            tb_graph.title = tname == '_overall' ? "AOS Release Test Blockers for #{rname}" : "#{tname} Test Blockers for #{rname}"
-            tb_graph.data "Total",  rdata.series[:total_tb]
-            tb_graph.data "New",    rdata.series[:new_tb]
-            tb_graph.data "Closed", rdata.series[:closed_tb]
-            tb_graph.write(File.join(@tmp_dir,tb_fname))
-          end
-
+          rname    = release.name
+          rdata    = tdata.has_release_data?(release) ? tdata.get_release_data(release) : nil
           snapdata = nil
           if not rdata.nil? and rdata.snaps.has_key?(latest_snapshot)
             snapdata = rdata.snaps[latest_snapshot]
@@ -226,18 +199,56 @@ module Shiftzilla
             snapdata = Shiftzilla::SnapData.new(latest_snapshot)
           end
 
-          team_pinfo[:releases] << {
+          release_info = {
             :release     => release,
             :snapdata    => snapdata,
-            :no_rdata    => rdata.nil?,
+            :no_rdata    => (rdata.nil? ? true : false),
             :bug_avg_age => (rdata.nil? ? 0 : rdata.bug_avg_age),
             :tb_avg_age  => (rdata.nil? ? 0 : rdata.tb_avg_age),
-            :charts      => {
-              :burndown   => bd_fname,
-              :new_closed => nc_fname,
-              :blockers   => tb_fname,
-            },
           }
+          unless rdata.nil?
+            release_info[:charts] = {
+              :burndown   => chartify('Bug Burndown',rdata.series[:date],[
+                {
+                  :label => 'Ideal Trend',
+                  :data  => rdata.series[:ideal],
+                },
+                {
+                  :label => 'Total',
+                  :data  => rdata.series[:total_bugs],
+                },
+                {
+                  :label => 'w/ Customer Cases',
+                  :data  => rdata.series[:total_cc],
+                },
+              ]),
+              :new_closed => chartify('New vs. Closed',rdata.series[:date],[
+                  {
+                    :label => 'New',
+                    :data  => rdata.series[:new_bugs],
+                  },
+                  {
+                    :label => 'Closed',
+                    :data  => rdata.series[:closed_bugs],
+                  },
+              ]),
+              :blockers   => chartify('Test Blockers',rdata.series[:date],[
+                  {
+                    :label => 'Total',
+                    :data  => rdata.series[:total_tb],
+                  },
+                  {
+                    :label => 'New',
+                    :data  => rdata.series[:new_tb],
+                  },
+                  {
+                    :label => 'Closed',
+                    :data  => rdata.series[:closed_tb],
+                  },
+              ]),
+            }
+          end
+          team_pinfo[:releases] << release_info
 
           if rname == 'All'
             team_pinfo[:all_bugs] = snapdata.bug_ids.map{ |id| rdata.bugs[id] }
@@ -246,6 +257,10 @@ module Shiftzilla
         team_page = haml_engine.render(Object.new,team_pinfo)
         File.write(File.join(@tmp_dir,tdata.file), team_page)
       end
+      # Copy flot library to build area
+      jsdir = File.join(@tmp_dir,'js')
+      Dir.mkdir(jsdir)
+      FileUtils.cp(File.join(VENDOR_DIR,'flot','jquery.flot.min.js'),jsdir)
     end
 
     def show_local_reports
@@ -268,6 +283,46 @@ module Shiftzilla
           end
         end
         comp_map
+      end
+    end
+
+    def chartify(title,dates,series)
+      modulo = label_modulo(dates.length)
+      tlist  = []
+      dates.each_with_index do |val,idx|
+        next unless (idx + 1) % modulo == 0
+        tlist << [idx,Date.parse(val).strftime('%m/%d')]
+      end
+      data = []
+      series.each do |s|
+        dlist = []
+        s[:data].each_with_index do |val,idx|
+          dlist <<[idx,val]
+        end
+        data << { :label => s[:label], :data => dlist }
+      end
+      options = {
+        :xaxis => {
+          :ticks => tlist,
+        },
+        :yaxis => {
+          :min        => 0,
+          :labelWidth => 50,
+        },
+        :tickSize => 5,
+      }
+      return { :title => title, :data => data.to_json, :options => options.to_json }
+    end
+
+    def label_modulo(date_count)
+      if date_count < 15
+        return 1
+      elsif date_count < 30
+        return 2
+      elsif date_count < 60
+        return 5
+      else
+        return 10
       end
     end
   end

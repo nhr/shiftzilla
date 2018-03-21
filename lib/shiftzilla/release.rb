@@ -6,7 +6,7 @@ module Shiftzilla
 
     def initialize(release,builtin=false)
       @name       = release['name']
-      @token      = @name.tr(' .', '-')
+      @token      = @name.tr(' .', '_')
       @targets    = release['targets']
       @default    = release.has_key?('default') ? release['default'] : false
       @builtin    = builtin

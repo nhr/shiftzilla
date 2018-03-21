@@ -59,6 +59,7 @@ Description:
 Options:
 EOF
     opt :local_preview, "Don't publish, just show the report locally", :default => false
+    opt :quiet, "For cron use; don't print anything to STDOUT.", :default => false
   end
 when 'purge'
   Trollop::options do

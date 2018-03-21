@@ -21,7 +21,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'bundler', '~> 1.16', '>= 1.16.1'
 
   spec.add_dependency 'fileutils',      '~> 1.0', '>= 1.0.2'
-  spec.add_dependency 'gruff',          '~> 0.7'
   spec.add_dependency 'haml',           '~> 5.0', '>= 5.0.4'
   spec.add_dependency 'highline',       '~> 1.7', '>= 1.7.10'
   spec.add_dependency 'sqlite3',        '~> 1.3', '>= 1.3.13'

@@ -15,6 +15,10 @@
     %link{ :rel  => 'stylesheet',
            :href => 'https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css' }
 
+    %style{ :type => 'text/css' }
+      = ".shiftzilla-chart { width: 600px; height: 200px; }"
+      = ".shiftzilla-card { width: 700px; }"
+
     %title Shiftzilla
   %body
     .container
@@ -66,7 +70,7 @@
             %tr
               %td Closed Yesterday
               - releases.each do |r|
-                %td.text-right= r[:snapdata].total_cc
+                %td.text-right= r[:snapdata].closed_bugs
             %tr
               %td Test Blockers
               - releases.each do |r|
@@ -95,22 +99,13 @@
                 - releases.each do |r|
                   %td.text-right= tm[:releases][r[:release].name]
         .col-6
-          #accordion
-            - first_release = true
-            - chart_order.each do |cidx|
-              - r = releases[cidx]
-              - next if r.nil? or r[:release].built_in? or r[:no_rdata]
-              .card
-                %div{ :class => 'card-header', :id => "heading-#{r[:release].token}"}
-                  %h5.mb-0
-                    %button(class="btn btn-link" data-toggle="collapse" data-target="#collapse-#{r[:release].token}" aria-expanded="#{first_release ? 'true' : 'false'}" aria-controls="collapse-#{r[:release].token}")
-                      = "#{r[:release].name} Charts"
-                %div(id="collapse-#{r[:release].token}" class="collapse#{first_release ? ' show' : ''}" aria-labelledby="heading-#{r[:release].token}" data-parent="#accordion")
-                  - first_release = false
-                  %div.card-body
-                    %img{ :class => 'img-fluid', :src => r[:charts][:burndown] }
-                    %img{ :class => 'img-fluid', :src => r[:charts][:new_closed] }
-                    %img{ :class => 'img-fluid', :src => r[:charts][:blockers] }
+          - chart_order.each do |cidx|
+            - r = releases[cidx]
+            - next if r.nil? or r[:release].built_in? or r[:no_data] or not r.has_key?(:charts)
+            .badge.badge-secondary.text-left.w-100= r[:release].name
+            - [:burndown,:new_closed,:blockers].each do |chart|
+              .badge.badge-light.text-left.text-muted.w-100.pr-4= r[:charts][chart][:title]
+              %div{ :id => "chart_#{r[:release].token}_#{chart.to_s}", :class => 'card-body w-100', :style => 'height: 200px;' }
       - if all_bugs.length > 0
         .row
           .col
@@ -166,11 +161,16 @@
     %script{ :src => 'https://code.jquery.com/jquery-1.12.4.js' }
     %script{ :src => 'https://cdn.datatables.net/1.10.16/js/jquery.dataTables.min.js' }
     %script{ :src => 'https://cdn.datatables.net/1.10.16/js/dataTables.bootstrap4.min.js' }
-    - if all_bugs.length > 0
-      :javascript
-        $(document).ready(function() {
-          $('#team-bugs-all').DataTable({
-            'paging': false,
-            'order': [[0,'desc'],[1,'desc'],[2,'desc']]
-          });
-        });
+    %script{ :src => 'js/jquery.flot.min.js' }
+    %script{ :type => 'text/javascript' }
+      $(document).ready(function() {
+      - if all_bugs.length > 0
+        $('#team-bugs-all').DataTable({ 'paging': false, 'order': [[0,'desc'],[1,'desc'],[2,'desc']] });
+      - chart_order.each do |cidx|
+        - r = releases[cidx]
+        - next if r.nil? or r[:release].built_in? or r[:no_data] or not r.has_key?(:charts)
+        - [:burndown,:new_closed,:blockers].each do |chart|
+          = "var cdata_#{r[:release].token}_#{chart.to_s} = JSON.parse('#{r[:charts][chart][:data]}');"
+          = "var copts_#{r[:release].token}_#{chart.to_s} = JSON.parse('#{r[:charts][chart][:options]}');"
+          = "$.plot($(\"#chart_#{r[:release].token}_#{chart.to_s}\"), cdata_#{r[:release].token}_#{chart.to_s}, copts_#{r[:release].token}_#{chart.to_s});"
+      });
