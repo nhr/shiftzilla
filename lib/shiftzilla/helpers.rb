@@ -1,3 +1,4 @@
+require 'date'
 require 'fileutils'
 require 'haml'
 require 'fileutils'
@@ -82,6 +83,10 @@ module Shiftzilla
         puts "Backed up the database."
         @db_backed_up = true
       end
+    end
+
+    def timestamp
+      DateTime.now.to_s
     end
 
     def bug_url(bug_id)

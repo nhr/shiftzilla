@@ -39,6 +39,7 @@ module Shiftzilla
           binfo = {
             :snapdate     => snapdate,
             :test_blocker => keyw.include?('TestBlocker'),
+            :ops_blocker  => keyw.include?('OpsBlocker'),
             :owner        => owns,
             :summary      => summ,
             :component    => comp,
@@ -77,7 +78,7 @@ module Shiftzilla
 
             # Add info to the snapshot
             snapdata.bug_ids << bzid
-            if bug.test_blocker
+            if bug.test_blocker or bug.ops_blocker
               snapdata.tb_ids << bzid
             end
             if bug.cust_cases
@@ -172,12 +173,14 @@ module Shiftzilla
     end
 
     def generate_reports
+      build_time  = timestamp
       all_release = @config.release('All')
       @ordered_teams.each do |tname|
         tinfo = @config.team(tname)
         tdata = @org_data[tname]
 
         team_pinfo = {
+          :build_time      => build_time,
           :tname           => tdata.title,
           :tinfo           => tinfo,
           :tdata           => tdata,
@@ -232,7 +235,7 @@ module Shiftzilla
                     :data  => rdata.series[:closed_bugs],
                   },
               ]),
-              :blockers   => chartify('Test Blockers',rdata.series[:date],[
+              :blockers   => chartify('Test / Ops Blockers',rdata.series[:date],[
                   {
                     :label => 'Total',
                     :data  => rdata.series[:total_tb],

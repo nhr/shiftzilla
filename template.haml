@@ -23,14 +23,19 @@
   %body
     .container
       .row
-        %h1
-          Shiftzilla 
-          \|
-          %small
-            %span.text-muted= tname
-          \|
-          %small
-            %span.text-muted= latest_snapshot
+        .col
+          %h1
+            Shiftzilla 
+            \|
+            %small
+              %span.text-muted= tname
+            \|
+            %small
+              %span.text-muted= latest_snapshot
+      .row
+        .col
+          %p.text-muted= "Last built: #{build_time} (builds hourly 06:00 - 20:00 UTC-4)"
+          %hr
       .row
         .col-6
           %a{ :name => 'top' }
@@ -72,7 +77,7 @@
               - releases.each do |r|
                 %td.text-right= r[:snapdata].closed_bugs
             %tr
-              %td Test Blockers
+              %td Test / Ops Blockers
               - releases.each do |r|
                 %td.text-right= r[:snapdata].total_tb
             %tr
@@ -119,7 +124,7 @@
               %thead
                 %tr
                   %th
-                    %abbr{ :title => 'Test Blocker?' } TB
+                    %abbr{ :title => 'Test Blocker or Ops Blocker?' } Blocker
                   %th
                     %abbr{ :title => 'See https://mojo.redhat.com/docs/DOC-1159309' } PM
                   %th
@@ -133,7 +138,9 @@
               %tbody
                 - all_bugs.each do |b|
                   %tr
-                    %td= b.test_blocker ? "<span class='badge badge-danger'>TB</span>" : ''
+                    %td
+                      = b.test_blocker ? "<span class='badge badge-danger'>TB</span>" : ''
+                      = b.ops_blocker ? "<span class='badge badge-dark'>OB</span>" : ''
                     %td= b.pm_score
                     %td= b.cust_cases ? "<span class='badge badge-warning'>CC</span>" : ''
                     %td(data-order="#{b.semver}")= b.tgt_release

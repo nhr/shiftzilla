@@ -136,9 +136,9 @@ module Shiftzilla
       else
         org_data.publish_reports(ssh)
         system("rm -rf #{org_data.tmp_dir}")
-      end
-      unless options[:quiet]
-        system("open #{ssh[:url]}")
+        unless options[:quiet]
+          system("open #{ssh[:url]}")
+        end
       end
     end
 
