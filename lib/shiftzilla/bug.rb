@@ -1,6 +1,6 @@
 module Shiftzilla
   class Bug
-    attr_reader :id, :first_seen, :last_seen, :test_blocker, :ops_blocker, :owner, :component, :pm_score, :cust_cases, :tgt_release
+    attr_reader :id, :first_seen, :last_seen, :test_blocker, :ops_blocker, :owner, :component, :pm_score, :cust_cases, :tgt_release, :summary
 
     def initialize(bzid,binfo)
       @id           = bzid
@@ -28,7 +28,7 @@ module Shiftzilla
       @tgt_release  = binfo[:tgt_release]
     end
 
-    def summary
+    def short_summary
       @summary[0..30].gsub(/\s\w+\s*$/, '...')
     end
 
