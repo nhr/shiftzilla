@@ -186,7 +186,6 @@ module Shiftzilla
           :tdata           => tdata,
           :team_files      => @team_files,
           :bug_url         => BZ_URL,
-          :chart_order     => ((1..(@releases.length - 1)).to_a << 0),
           :releases        => [],
           :latest_snapshot => latest_snapshot,
           :all_bugs        => [],
@@ -264,6 +263,7 @@ module Shiftzilla
       jsdir = File.join(@tmp_dir,'js')
       Dir.mkdir(jsdir)
       FileUtils.cp(File.join(VENDOR_DIR,'flot','jquery.flot.min.js'),jsdir)
+      FileUtils.cp(DB_FPATH,@tmp_dir)
     end
 
     def show_local_reports

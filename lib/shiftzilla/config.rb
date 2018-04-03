@@ -25,11 +25,11 @@ module Shiftzilla
         @sources << Shiftzilla::Source.new(sid,sinfo)
       end
       # Always track a release for bugs with no target release
-      @releases = [Shiftzilla::Release.new({ 'name' => '"---"', 'targets' => ['---'] },true)]
+      @releases = [Shiftzilla::Release.new({ 'name' => 'All', 'targets' => [] })]
       cfg_file['Releases'].each do |release|
         @releases << Shiftzilla::Release.new(release)
       end
-      @releases << Shiftzilla::Release.new({ 'name' => 'All', 'targets' => [] },true)
+      @releases << Shiftzilla::Release.new({ 'name' => '"---"', 'targets' => ['---'] },true)
       @ssh = {
         :host => cfg_file['SSH']['host'],
         :path => cfg_file['SSH']['path'],
