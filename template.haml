@@ -108,7 +108,7 @@
                   %td.text-right= tm[:releases][r[:release].name]
         .col-6
           - releases.each do |r|
-            - next if r.nil? or r[:no_data] or not r.has_key?(:charts)
+            - next if r.nil? or r[:release].built_in? or r[:no_data] or not r.has_key?(:charts)
             .badge.badge-secondary.text-left.w-100= r[:release].name
             - [:burndown,:new_closed,:blockers].each do |chart|
               .badge.badge-light.text-left.text-muted.w-100.pr-4= r[:charts][chart][:title]
