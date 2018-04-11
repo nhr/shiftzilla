@@ -35,6 +35,12 @@ module Shiftzilla
           pmsc = row[7].nil? ? '0' : row[7].strip
           cust = row[8].nil? ? 0 : row[8]
 
+          # TODO: REMOVE BUSINESS LOGIC EMBEDDED IN CODE
+          if comp == 'Security' and keyw.include?('Unconfirmed')
+            puts "NB: This report has a hardcoded exclusion of 'Security' component bugs with the 'Unconfirmed' keyword."
+            next
+          end
+
           # Package up bug data
           binfo = {
             :snapdate     => snapdate,
@@ -42,6 +48,7 @@ module Shiftzilla
             :ops_blocker  => keyw.include?('OpsBlocker'),
             :owner        => owns,
             :summary      => summ,
+            :status       => stat,
             :component    => comp,
             :pm_score     => pmsc,
             :cust_cases   => (cust == 1),
@@ -305,6 +312,9 @@ module Shiftzilla
         data << { :label => s[:label], :data => dlist }
       end
       options = {
+        :legend => {
+          :position => 'nw'
+        },
         :xaxis => {
           :ticks => tlist,
         },

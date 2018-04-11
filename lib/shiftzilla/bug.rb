@@ -1,6 +1,6 @@
 module Shiftzilla
   class Bug
-    attr_reader :id, :first_seen, :last_seen, :test_blocker, :ops_blocker, :owner, :component, :pm_score, :cust_cases, :tgt_release, :summary
+    attr_reader :id, :first_seen, :last_seen, :test_blocker, :ops_blocker, :owner, :component, :pm_score, :cust_cases, :tgt_release, :summary, :status
 
     def initialize(bzid,binfo)
       @id           = bzid
@@ -10,6 +10,7 @@ module Shiftzilla
       @ops_blocker  = binfo[:ops_blocker]
       @owner        = binfo[:owner]
       @summary      = binfo[:summary]
+      @status       = binfo[:status]
       @component    = binfo[:component]
       @pm_score     = binfo[:pm_score]
       @cust_cases   = binfo[:cust_cases]
@@ -22,14 +23,11 @@ module Shiftzilla
       @ops_blocker  = binfo[:ops_blocker]
       @owner        = binfo[:owner]
       @summary      = binfo[:summary]
+      @status       = binfo[:status]
       @component    = binfo[:component]
       @pm_score     = binfo[:pm_score]
       @cust_cases   = binfo[:cust_cases]
       @tgt_release  = binfo[:tgt_release]
-    end
-
-    def short_summary
-      @summary[0..30].gsub(/\s\w+\s*$/, '...')
     end
 
     def age

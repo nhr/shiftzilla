@@ -133,6 +133,7 @@
                     %abbr{ :title => 'Has attached customer cases?'} CC
                   %th Target
                   %th Bug
+                  %th Status
                   %th Component
                   %th Age
                   %th Owner
@@ -148,6 +149,7 @@
                     %td(data-order="#{b.semver}")= b.tgt_release
                     %td
                       %a{ :href => "#{bug_url}#{b.id}", :target => '_blank' }= b.id
+                    %td= b.status
                     %td= b.component
                     %td= b.age
                     %td
