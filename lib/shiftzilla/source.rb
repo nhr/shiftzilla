@@ -27,7 +27,6 @@ module Shiftzilla
       insert_frame  = @fields.map{ |fld| '?' }.join(', ')
       bz_command    = "bugzilla query --savedsearch #{@search} --savedsearch-sharer-id=#{@sharer} --outputformat='#{output_format}'"
       bz_csv        = `#{bz_command}`
-      row_count     = 0
       retrieved     = []
       bz_csv.split("\n").each do |row|
         values = row.split("\x1F")
@@ -39,20 +38,23 @@ module Shiftzilla
           end
         end
         retrieved << values
-        row_count += 1
       end
       puts "Retrieved #{retrieved.length} rows"
-      if options[:purge] and retrieved.length > 0
-        # We know we have new data, so it is okay to nuke the old data
-        puts "Purging old records"
-        purge_records
+      if retrieved.length > 0
+        if options[:purge]
+          # We know we have new data, so it is okay to nuke the old data
+          puts "Purging old records"
+          purge_records
+        end
+        puts "Loading new records"
+        dbh.transaction
+        retrieved.each do |values|
+          dbh.execute("INSERT INTO #{@table} (#{table_fields}) VALUES (#{insert_frame})", values)
+        end
+        dbh.execute("UPDATE #{@table} SET Snapshot = date('now') WHERE Snapshot ISNULL")
+        dbh.commit
       end
-      puts "Loading new records"
-      retrieved.each do |values|
-        dbh.execute("INSERT INTO #{@table} (#{table_fields}) VALUES (#{insert_frame})", values)
-      end
-      dbh.execute("UPDATE #{@table} SET Snapshot = date('now') WHERE Snapshot ISNULL")
-      return row_count
+      return retrieved.length
     end
 
     def purge_records
