@@ -45,6 +45,7 @@ Description:
 
 Options:
 EOF
+    opt :purge, "After querying for bug data - if we already have data ffor today, clear it out before loading new data", :default => false
   end
 when 'build'
   Trollop::options do
@@ -98,7 +99,7 @@ check_config
 
 case cmd
 when 'load'
-  load_records
+  load_records(cmd_opts)
 when 'build'
   build_reports(cmd_opts)
 when 'purge'

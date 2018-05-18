@@ -126,7 +126,7 @@
               %thead
                 %tr
                   %th
-                    %abbr{ :title => 'Test Blocker or Ops Blocker?' } Blocker
+                    %abbr{ :title => 'Test Blocker, Ops Blocker, or Online Blocker?' } Blocker
                   %th
                     %abbr{ :title => 'See https://mojo.redhat.com/docs/DOC-1159309' } PM
                   %th
@@ -142,8 +142,9 @@
                 - all_bugs.each do |b|
                   %tr
                     %td
-                      = b.test_blocker ? "<span class='badge badge-danger'>TB</span>" : ''
-                      = b.ops_blocker ? "<span class='badge badge-dark'>OB</span>" : ''
+                      = b.test_blocker ? "<span class='badge badge-danger'>Test</span>" : ''
+                      = b.ops_blocker ? "<span class='badge badge-dark'>Ops</span>" : ''
+                      = b.online_blocker ? "<span class='badge badge-warning'>Online</span>" : ''
                     %td= b.pm_score
                     %td= b.cust_cases ? "<span class='badge badge-warning'>CC</span>" : ''
                     %td(data-order="#{b.semver}")= b.tgt_release

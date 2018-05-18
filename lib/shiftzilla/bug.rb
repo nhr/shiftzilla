@@ -1,33 +1,35 @@
 module Shiftzilla
   class Bug
-    attr_reader :id, :first_seen, :last_seen, :test_blocker, :ops_blocker, :owner, :component, :pm_score, :cust_cases, :tgt_release, :summary, :status
+    attr_reader :id, :first_seen, :last_seen, :test_blocker, :ops_blocker, :online_blocker, :owner, :component, :pm_score, :cust_cases, :tgt_release, :summary, :status
 
     def initialize(bzid,binfo)
-      @id           = bzid
-      @first_seen   = binfo[:snapdate]
-      @last_seen    = binfo[:snapdate]
-      @test_blocker = binfo[:test_blocker]
-      @ops_blocker  = binfo[:ops_blocker]
-      @owner        = binfo[:owner]
-      @summary      = binfo[:summary]
-      @status       = binfo[:status]
-      @component    = binfo[:component]
-      @pm_score     = binfo[:pm_score]
-      @cust_cases   = binfo[:cust_cases]
-      @tgt_release  = binfo[:tgt_release]
+      @id             = bzid
+      @first_seen     = binfo[:snapdate]
+      @last_seen      = binfo[:snapdate]
+      @test_blocker   = binfo[:test_blocker]
+      @ops_blocker    = binfo[:ops_blocker]
+      @online_blocker = binfo[:online_blocker]
+      @owner          = binfo[:owner]
+      @summary        = binfo[:summary]
+      @status         = binfo[:status]
+      @component      = binfo[:component]
+      @pm_score       = binfo[:pm_score]
+      @cust_cases     = binfo[:cust_cases]
+      @tgt_release    = binfo[:tgt_release]
     end
 
     def update(binfo)
-      @last_seen    = binfo[:snapdate]
-      @test_blocker = binfo[:test_blocker]
-      @ops_blocker  = binfo[:ops_blocker]
-      @owner        = binfo[:owner]
-      @summary      = binfo[:summary]
-      @status       = binfo[:status]
-      @component    = binfo[:component]
-      @pm_score     = binfo[:pm_score]
-      @cust_cases   = binfo[:cust_cases]
-      @tgt_release  = binfo[:tgt_release]
+      @last_seen      = binfo[:snapdate]
+      @test_blocker   = binfo[:test_blocker]
+      @ops_blocker    = binfo[:ops_blocker]
+      @online_blocker = binfo[:online_blocker]
+      @owner          = binfo[:owner]
+      @summary        = binfo[:summary]
+      @status         = binfo[:status]
+      @component      = binfo[:component]
+      @pm_score       = binfo[:pm_score]
+      @cust_cases     = binfo[:cust_cases]
+      @tgt_release    = binfo[:tgt_release]
     end
 
     def age

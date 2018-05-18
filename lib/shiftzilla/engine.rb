@@ -64,14 +64,15 @@ module Shiftzilla
       end
     end
 
-    def load_records
+    def load_records(options)
       sources.each do |s|
-        if s.has_records_for_today?
+        proceed = true
+        if s.has_records_for_today? and not options[:purge]
           puts "Skipping query for #{s.id}; it already has records for today."
         else
           backup_db
           puts "Querying bugzilla for #{s.id}"
-          added_count = s.load_records
+          added_count = s.load_records(options)
           puts "Added #{added_count} records to #{s.table}"
         end
       end
