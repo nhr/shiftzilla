@@ -275,6 +275,7 @@ module Shiftzilla
     end
 
     def show_local_reports
+      puts "Local files available at #{@tmp_dir}"
       system("open file://#{@tmp_dir}/index.html")
     end
 
