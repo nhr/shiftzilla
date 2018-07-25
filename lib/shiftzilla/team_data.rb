@@ -2,6 +2,7 @@ require 'shiftzilla/release_data'
 
 module Shiftzilla
   class TeamData
+    attr_reader :name
 
     def initialize(tname)
       @name         = tname

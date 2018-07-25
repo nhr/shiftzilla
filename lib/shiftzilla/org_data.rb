@@ -189,7 +189,8 @@ module Shiftzilla
 
         team_pinfo = {
           :build_time      => build_time,
-          :tname           => tdata.title,
+          :tdisp           => tdata.title,
+          :tname           => tdata.name,
           :tinfo           => tinfo,
           :tdata           => tdata,
           :team_files      => @team_files,

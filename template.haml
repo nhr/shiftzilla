@@ -31,7 +31,7 @@
             Shiftzilla 
             \|
             %small
-              %span.text-muted= tname
+              %span.text-muted= tdisp
             \|
             %small
               %span.text-muted= latest_snapshot
@@ -49,7 +49,7 @@
               %li= "Group Lead: #{tinfo.group.lead}"
               - if tinfo.components.length > 0
                 %li= "BZ Component(s): #{tinfo.components.join(', ')}"
-          %h5= "#{tdata.title} Summary"
+          %h5= "#{tdisp} Summary"
           %table.table.table-hover.table-sm
             %tr
               %td Release
@@ -91,26 +91,29 @@
               %td Closed Blockers Yesterday
               - releases.each do |r|
                 %td.text-right= r[:snapdata].closed_tb
-          %h5 Totals By Team
-          %table.table.table-hover.table-sm
-            %tr
-              %td Team
-              - releases.each do |r|
-                %td.text-right= r[:release].name
-            - team_files.each do |tm|
+          - if tname == '_overall'
+            %h5 Totals By Team
+            %table.table.table-hover.table-sm
               %tr
-                %td
-                  - if tm[:tname] == tname
-                    = tname
-                  - else
-                    %a{ :href => tm[:file] }= tm[:tname]
+                %td Team
                 - releases.each do |r|
-                  %td.text-right= tm[:releases][r[:release].name]
+                  %td.text-right= r[:release].name
+              - team_files.each do |tm|
+                %tr
+                  %td
+                    - if tm[:tname] == tdisp
+                      = tdisp
+                    - else
+                      %a{ :href => tm[:file] }= tm[:tname]
+                  - releases.each do |r|
+                    %td.text-right= tm[:releases][r[:release].name]
         .col-6
           - releases.each do |r|
+            - next if tname != '_overall' and r[:release].name == 'All'
             - next if r.nil? or r[:release].built_in? or r[:no_data] or not r.has_key?(:charts)
             .badge.badge-secondary.text-left.w-100= r[:release].name
             - [:burndown,:new_closed,:blockers].each do |chart|
+              - next if tname != '_overall' and chart != :burndown
               .badge.badge-light.text-left.text-muted.w-100.pr-4= r[:charts][chart][:title]
               %div{ :id => "chart_#{r[:release].token}_#{chart.to_s}", :class => 'card-body w-100', :style => 'height: 200px;' }
       - if all_bugs.length > 0
@@ -179,8 +182,10 @@
       - if all_bugs.length > 0
         $('#team-bugs-all').DataTable({ 'paging': false, 'order': [[0,'desc'],[1,'desc'],[2,'desc']] });
       - releases.each do |r|
+        - next if tname != '_overall' and r[:release].name == 'All'
         - next if r.nil? or r[:release].built_in? or r[:no_data] or not r.has_key?(:charts)
         - [:burndown,:new_closed,:blockers].each do |chart|
+          - next if tname != '_overall' and chart != :burndown
           = "var cdata_#{r[:release].token}_#{chart.to_s} = JSON.parse('#{r[:charts][chart][:data]}');"
           = "var copts_#{r[:release].token}_#{chart.to_s} = JSON.parse('#{r[:charts][chart][:options]}');"
           = "$.plot($(\"#chart_#{r[:release].token}_#{chart.to_s}\"), cdata_#{r[:release].token}_#{chart.to_s}, copts_#{r[:release].token}_#{chart.to_s});"
