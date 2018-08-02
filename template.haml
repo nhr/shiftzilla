@@ -46,7 +46,8 @@
             %h5 Team Info
             %ul
               %li= "Team Lead: #{tinfo.lead}"
-              %li= "Group Lead: #{tinfo.group.lead}"
+              - if not tinfo.group.nil? and not tinfo.group.lead.nil?
+                %li= "Group Lead: #{tinfo.group.lead}"
               - if tinfo.components.length > 0
                 %li= "BZ Component(s): #{tinfo.components.join(', ')}"
           %h5= "#{tdisp} Summary"
