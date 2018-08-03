@@ -43,7 +43,7 @@ module Shiftzilla
     end
 
     def cfg_file
-      @cfg_file ||= YAML.load_file(CFG_FILE)
+      @cfg_file ||= validated_config_file(YAML.load_file(CFG_FILE))
     end
 
     def dbh
@@ -169,6 +169,218 @@ module Shiftzilla
 
     def db_backed_up
       @db_backed_up ||= false
+    end
+
+    def valid_config_string?(value)
+      return false if value.class == NilClass
+      return false if value.class == String and value.length == 0
+      return true
+    end
+
+    def validated_config_file(raw_cfg)
+      unless raw_cfg.class == Hash
+        puts "#{CFG_FILE} did not get parsed as a hash."
+        exit
+      end
+      missing_keys = ['Groups','Teams','Sources','Releases','SSH'].select{ |k| not raw_cfg.has_key?(k) }
+      if missing_keys.length > 0
+        if missing_keys.length > 1
+          puts "#{CFG_FILE} is missing the following keys: #{missing_keys.join(', ')}"
+        else
+          puts "#{CFG_FILE} is missing the '#{missing_keys[0]}' key."
+        end
+        exit
+      end
+      zero_length_lists = ['Groups','Teams','Releases'].select{ |k| not raw_cfg[k].class == Array or raw_cfg[k].length == 0 }
+      if zero_length_lists.length > 0
+        if zero_length_lists.length > 1
+          puts "#{CFG_FILE} contains some zero-length lists: #{zero_length_lists.join(', ')}"
+        else
+          puts "#{CFG_FILE} contains a zero-length list for #{zero_length_lists[0]}"
+        end
+        exit
+      end
+
+      errors = []
+
+      # Group checks
+      list_idx  = 0
+      seen_gids = {}
+      raw_cfg['Groups'].each do |group|
+        if not group.has_key?('id')
+          errors << "Group at index #{list_idx} is missing the 'id' key."
+        elsif not valid_config_string?(group['id'])
+          errors << "Group at index #{list_idx} has a nil or zero-length 'id'."
+        else
+          gid = group['id']
+          if seen_gids.has_key?(gid)
+            errors << "Group at index #{list_idx} has same id ('#{gid}') as group at index #{seen_gids[gid]}"
+          else
+            seen_gids[gid] = list_idx
+          end
+        end
+        if not group.has_key?('lead')
+          errors << "Group at index #{list_idx} is missing the 'lead' key."
+        elsif not valid_config_string?(group['lead'])
+          errors << "Group at index #{list_idx} has a nil or zero-length 'lead'."
+        end
+        list_idx += 1
+      end
+
+      # Team checks
+      list_idx  = 0
+      seen_tnms = {}
+      raw_cfg['Teams'].each do |team|
+        if not team.has_key?('name')
+          errors << "Team at index #{list_idx} is missing the 'name' key."
+        elsif not valid_config_string?(team['name'])
+          errors << "Team at index #{list_idx} has a nil or zero-length 'name'."
+        else
+          tnm = team['name']
+          if seen_tnms.has_key?(tnm)
+            errors << "Team at index #{list_idx} has same name ('#{tnm}') as team at index #{seen_tnms[tnm]}"
+          else
+            seen_tnms[tnm] = list_idx
+          end
+        end
+        if not team.has_key?('lead')
+          errors << "Team at index #{list_idx} is missing the 'lead' key."
+        elsif not valid_config_string?(team['lead'])
+          errors << "Team at index #{list_idx} has a nil or zero-length 'lead'."
+        end
+        if not team.has_key?('group')
+          errors << "Team at index #{list_idx} is missing the 'group' key."
+        elsif not valid_config_string?(team['group'])
+          errors << "Team at index #{list_idx} has a nil or zero-length 'group'."
+        elsif not seen_gids.has_key?(team['group'])
+          errors << "Team at index #{list_idx} has a group id ('#{team['group']}') that doesn't map to any Group."
+        end
+        if team.has_key?('components')
+          comps = team['components']
+          if not comps.class == Array
+            errors << "Team at index #{list_idx} has a 'components' key that didn't parse as a list"
+          else
+            comp_idx = 0
+            comps.each do |comp|
+              if not valid_config_string?(comp)
+                errors << "Team at index #{list_idx} has a nil or zero-length BZ component at index #{comp_idx}"
+              end
+              comp_idx += 1
+            end
+          end
+        end
+        list_idx += 1
+      end
+
+      # Release checks
+      list_idx  = 0
+      seen_rnms = {}
+      raw_cfg['Releases'].each do |release|
+        if not release.has_key?('name')
+          errors << "Release at index #{list_idx} is missing the 'name' key."
+        elsif not valid_config_string?(release['name'])
+          errors << "Release at index #{list_idx} has a nil or zero-length 'name'."
+        else
+          rnm = release['name']
+          if seen_rnms.has_key?(rnm)
+            errors << "Release at index #{list_idx} has same name ('#{rnm}') as release at index #{seen_rnms[rnm]}"
+          else
+            seen_rnms[rnm] = list_idx
+          end
+        end
+        if not release.has_key?('targets')
+          errors << "Release at index #{list_idx} is missing the 'targets' key."
+        else
+          targets = release['targets']
+          if not targets.class == Array
+            errors << "Release at index #{list_idx} has a 'targets' key that didn't parse as a list"
+          else
+            tgt_idx = 0
+            targets.each do |tgt|
+              if not valid_config_string?(tgt)
+                errors << "Release at index #{list_idx} has a nil or zero-length target at index #{tgt_idx}"
+              end
+              tgt_idx += 1
+            end
+          end
+        end
+        if not release.has_key?('milestones')
+          errors << "Release at index #{list_idx} is missing the 'milestones' key."
+        else
+          milestones = release['milestones']
+          if not milestones.class == Hash
+            errors << "Release at index #{list_idx} has a 'milestones' key that didn't parse as a hash"
+          else
+            ['start','feature_complete','code_freeze','ga'].each do |ms|
+              if not milestones.has_key?(ms)
+                errors << "Release at index #{list_idx} is missing the '#{ms}' milestone."
+              else
+                ms_date = milestones[ms].split('-')
+                if ms_date.length == 3 and ms_date[0].length == 4 and ms_date[1].length == 2 and ms_date[2].length == 2
+                else
+                  errors << "Release at index #{list_idx}: milestone '#{ms}' is not formatted correctly (YYYY-MM-DD)."
+                end
+              end
+            end
+          end
+        end
+        list_idx += 1
+      end
+
+      # Source checks
+      if not raw_cfg['Sources'].class == Hash
+        errors << "The Sources portion of the config file didn't parse as a hash."
+      else
+        seen_srcs = {}
+        raw_cfg['Sources'].each do |src_id,src_info|
+          ['search','sharer','table','external_sub','fields'].each do |key|
+            if not src_info.has_key?(key)
+              errors << "Source '#{src_id}' is missing the '#{key}' key."
+            else
+              if key == 'fields'
+                if not src_info['fields'].class == Array
+                  errors << "Source '#{src_id}': the 'fields' value didn't parse as a list."
+                else
+                  fld_idx = 0
+                  src_info['fields'].each do |fld|
+                    if not valid_config_string?(fld)
+                      errors << "Source '#{src_id}': the field value at index #{fld_idx} is nil or zero-length."
+                    end
+                    fld_idx += 1
+                  end
+                end
+              elsif not valid_config_string?(src_info[key])
+                errors << "Source '#{src_id}' has nil or zero-length value for '#{key}'"
+              end
+            end
+          end
+        end
+      end
+
+      # SSH checks
+      if not raw_cfg['SSH'].class == Hash
+        errors << "The SSH portion of the config file didn't parse as a hash."
+      else
+        ssh = raw_cfg['SSH']
+        ['host','path','url'].each do |key|
+          if not ssh.has_key?(key)
+            errors << "SSH config is missing the '#{key}' key."
+          elsif not valid_config_string?(ssh[key])
+            errors << "SSH config: '#{key}' value is nil or zero-length"
+          end
+        end
+      end
+
+      # Report errors
+      if errors.length > 0
+        puts "Config file at '#{CFG_FILE}' has the following errors:"
+        errors.each do |error|
+          puts "- #{error}"
+        end
+        exit
+      end
+
+      return raw_cfg
     end
   end
 end
