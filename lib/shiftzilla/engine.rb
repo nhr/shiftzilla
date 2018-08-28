@@ -10,14 +10,14 @@ include Shiftzilla::Helpers
 module Shiftzilla
   module Engine
     def check_config
-      if not File.directory?(SZA_DIR)
+      if not File.directory?(Shiftzilla::SZA_DIR)
         choose do |menu|
-          menu.header = 'You don\'t have a Shiftzilla config directory at $HOME/.shiftzilla. Should I create one?'
+          menu.header = "You don't have a Shiftzilla config directory at #{Shiftzilla::SZA_DIR}. Should I create one?"
           menu.prompt = 'Choice?'
           menu.choice(:yes) {
             say('Okay. Creating config directory.')
-            Dir.mkdir(SZA_DIR)
-            Dir.mkdir(ARCH_DIR)
+            Dir.mkdir(Shiftzilla::SZA_DIR)
+            Dir.mkdir(Shiftzilla::ARCH_DIR)
           }
           menu.choice(:no) {
             say('Okay. Exiting Shiftzilla.')
@@ -25,17 +25,17 @@ module Shiftzilla
           }
         end
       end
-      if not File.directory?(ARCH_DIR)
-        puts 'You don\'t have an archive directory at $HOME/.shiftzilla/archive. Creating it.'
-        Dir.mkdir(ARCH_DIR)
+      if not File.directory?(Shiftzilla::ARCH_DIR)
+        puts "You don't have an archive directory at #{Shiftzilla::ARCH_DIR}. Creating it."
+        Dir.mkdir(Shiftzilla::ARCH_DIR)
       end
-      if not File.exists?(CFG_FILE)
+      if not File.exists?(Shiftzilla::CFG_FILE)
         choose do |menu|
-          menu.header = "\nYou don't have a shiftzilla_cfg.yml file in $HOME/.shiftzilla. Should I create one?"
+          menu.header = "\nYou don't have a shiftzilla_cfg.yml file in #{Shiftzilla::SZA_DIR}. Should I create one?"
           menu.prompt = 'Choice?'
           menu.choice(:yes) {
             say('Okay. Creating shiftzilla_cfg.yml')
-            FileUtils.cp(CFG_TMPL,CFG_FILE)
+            FileUtils.cp(CFG_TMPL,Shiftzilla::CFG_FILE)
           }
           menu.choice(:no) {
             say('Okay. Exiting Shiftzilla.')
@@ -43,9 +43,9 @@ module Shiftzilla
           }
         end
       end
-      if not File.exists?(DB_FPATH)
+      if not File.exists?(Shiftzilla::DB_FPATH)
         choose do |menu|
-          menu.header = "\nYou don't have a shiftzilla.sqlite file in $HOME/.shiftzilla.\nI can create it for you, but it is very important for you to\nconfigure Shiftzilla by puttng the proper settings in\n$HOME/.shiftzilla/shiftzilla_cfg.yml first. Do you want me to proceed with creating the database?"
+          menu.header = "\nYou don't have a shiftzilla.sqlite file in #{Shiftzilla::SZA_DIR}.\nI can create it for you, but it is very important for you to\nconfigure Shiftzilla by puttng the proper settings in\n#{Shiftzilla::CFG_FILE} first.\nDo you want me to proceed with creating the database?"
           menu.prompt = 'Choice?'
           menu.choice(:yes) {
             say('Okay. Creating shiftzilla.sqlite')
