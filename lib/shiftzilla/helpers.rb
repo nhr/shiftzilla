@@ -8,17 +8,14 @@ require 'yaml'
 
 module Shiftzilla
   module Helpers
-    BZ_URL     = 'https://bugzilla.redhat.com/show_bug.cgi?id='
-    SZA_DIR    = File.join(ENV['HOME'],'.shiftzilla')
-    ARCH_DIR   = File.join(SZA_DIR,'archive')
-    CFG_FILE   = File.join(SZA_DIR,'shiftzilla_cfg.yml')
-    DB_FNAME   = 'shiftzilla.sqlite'
-    DB_FPATH   = File.join(SZA_DIR,DB_FNAME)
-    THIS_PATH  = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
-    HAML_TMPL  = File.expand_path(File.join(File.dirname(THIS_PATH), '../../template.haml'))
-    CFG_TMPL   = File.expand_path(File.join(File.dirname(THIS_PATH), '../../shiftzilla_cfg.yml.tmpl'))
-    SQL_TMPL   = File.expand_path(File.join(File.dirname(THIS_PATH), '../../shiftzilla.sql.tmpl'))
-    VENDOR_DIR = File.expand_path(File.join(File.dirname(THIS_PATH), '../../vendor'))
+    BZ_URL      = 'https://bugzilla.redhat.com/show_bug.cgi?id='
+    DB_FNAME    = 'shiftzilla.sqlite'
+    DEFAULT_DIR = File.join(ENV['HOME'],'.shiftzilla')
+    THIS_PATH   = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
+    HAML_TMPL   = File.expand_path(File.join(File.dirname(THIS_PATH), '../../template.haml'))
+    CFG_TMPL    = File.expand_path(File.join(File.dirname(THIS_PATH), '../../shiftzilla_cfg.yml.tmpl'))
+    SQL_TMPL    = File.expand_path(File.join(File.dirname(THIS_PATH), '../../shiftzilla.sql.tmpl'))
+    VENDOR_DIR  = File.expand_path(File.join(File.dirname(THIS_PATH), '../../vendor'))
 
     GRAPH_DIMENSIONS = '800x400'
     GRAPH_THEME      = {
@@ -38,16 +35,23 @@ module Shiftzilla
       :background_image  => nil,
     }
 
+    def set_sza_dir(sza_dir)
+      Shiftzilla.const_set('SZA_DIR',sza_dir)
+      Shiftzilla.const_set('ARCH_DIR',File.join(Shiftzilla::SZA_DIR,'archive'))
+      Shiftzilla.const_set('CFG_FILE',File.join(Shiftzilla::SZA_DIR,'shiftzilla_cfg.yml'))
+      Shiftzilla.const_set('DB_FPATH',File.join(Shiftzilla::SZA_DIR,DB_FNAME))
+    end
+
     def tmp_dir
       @tmp_dir ||= Dir.mktmpdir('shiftzilla-reports-')
     end
 
     def cfg_file
-      @cfg_file ||= validated_config_file(YAML.load_file(CFG_FILE))
+      @cfg_file ||= validated_config_file(YAML.load_file(Shiftzilla::CFG_FILE))
     end
 
     def dbh
-      @dbh ||= SQLite3::Database.new(DB_FPATH)
+      @dbh ||= SQLite3::Database.new(Shiftzilla::DB_FPATH)
     end
 
     def haml_engine
@@ -67,7 +71,7 @@ module Shiftzilla
     def backup_db
       unless db_backed_up
         today = Date.today.strftime('%Y-%m-%d')
-        tpath = File.join(ARCH_DIR,today)
+        tpath = File.join(Shiftzilla::ARCH_DIR,today)
         unless Dir.exists?(tpath)
           Dir.mkdir(tpath)
         end
@@ -79,7 +83,7 @@ module Shiftzilla
           break unless File.exists?(apath)
           copy_idx += 1
         end
-        FileUtils.cp DB_FPATH, apath
+        FileUtils.cp Shiftzilla::DB_FPATH, apath
         puts "Backed up the database."
         @db_backed_up = true
       end

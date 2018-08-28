@@ -45,7 +45,8 @@ Description:
 
 Options:
 EOF
-    opt :purge, "After querying for bug data - if we already have data ffor today, clear it out before loading new data", :default => false
+    opt :purge, "After querying for bug data - if we already have data for today, clear it out before loading new data", :default => false
+    opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
   end
 when 'build'
   Trollop::options do
@@ -61,6 +62,7 @@ Options:
 EOF
     opt :local_preview, "Don't publish, just show the report locally", :default => false
     opt :quiet, "For cron use; don't print anything to STDOUT.", :default => false
+    opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
   end
 when 'purge'
   Trollop::options do
@@ -73,6 +75,7 @@ Description:
 
 Options:
 EOF
+    opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
   end
 when 'triage'
   Trollop::options do
@@ -86,12 +89,19 @@ Description:
 
 Options:
 EOF
+    opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
   end
 when 'help'
   Trollop::educate
 when 'version'
   puts Shiftzilla::VERSION
   exit 0
+end
+
+if cmd_opts.has_key?(:configdir)
+  set_sza_dir(cmd_opts[:configdir])
+else
+  set_sza_dir(DEFAULT_DIR)
 end
 
 # Check for the config info
