@@ -3,13 +3,13 @@
 require 'shiftzilla/engine'
 require 'shiftzilla/helpers'
 require 'shiftzilla/version'
-require 'trollop'
+require 'optimist'
 
 include Shiftzilla::Engine
 include Shiftzilla::Helpers
 
 SUB_COMMANDS = %w{help version load build purge triage}
-Trollop::options do
+Optimist::options do
   version Shiftzilla::VERSION
   banner <<-EOF
 Usage:
@@ -33,7 +33,7 @@ end
 cmd = ARGV.shift
 cmd_opts = case cmd
 when 'load'
-  Trollop::options do
+  Optimist::options do
     banner <<-EOF
 Usage:
   #$0 load <options>
@@ -49,7 +49,7 @@ EOF
     opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
   end
 when 'build'
-  Trollop::options do
+  Optimist::options do
     banner <<-EOF
 Usage:
   #$0 build <options>
@@ -65,7 +65,7 @@ EOF
     opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
   end
 when 'purge'
-  Trollop::options do
+  Optimist::options do
     banner <<-EOF
 Usage:
   #$0 purge <options>
@@ -78,7 +78,7 @@ EOF
     opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
   end
 when 'triage'
-  Trollop::options do
+  Optimist::options do
     banner <<-EOF
 Usage:
   #$0 triage <options>
@@ -92,7 +92,7 @@ EOF
     opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
   end
 when 'help'
-  Trollop::educate
+  Optimist::educate
 when 'version'
   puts Shiftzilla::VERSION
   exit 0

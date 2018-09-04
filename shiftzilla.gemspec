@@ -26,5 +26,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'json',           '~> 2.1'
   spec.add_dependency 'sqlite3',        '~> 1.3', '>= 1.3.13'
   spec.add_dependency 'terminal-table', '~> 1.8'
-  spec.add_dependency 'trollop',        '~> 2.1', '>= 2.1.2'
+  spec.add_dependency 'optimist',       '~> 3.0'
 end
