@@ -15,7 +15,7 @@ module Shiftzilla
 
     def has_records_for_today?
       count = 0
-      dbh.execute("SELECT count(*) FROM #{@table} WHERE Snapshot = date('now')") do |row|
+      dbh.execute("SELECT count(*) FROM #{@table} WHERE Snapshot = date('now','localtime')") do |row|
         count = row[0].to_i
       end
       return count > 0
@@ -25,13 +25,14 @@ module Shiftzilla
       output_format = @fields.map{ |fld| "%{#{fld.to_s}}" }.join("\x1F")
       table_fields  = @fields.map{ |fld| "\"#{field_map[fld]}\"" }.join(',')
       insert_frame  = @fields.map{ |fld| '?' }.join(', ')
-      bz_command    = "bugzilla query --savedsearch #{@search} --savedsearch-sharer-id=#{@sharer} --outputformat='#{output_format}'"
+      bz_command    = "bugzilla query --savedsearch #{@search} --savedsearch-sharer-id=#{@sharer} --outputformat='#{output_format}||EOR'"
       bz_csv        = `#{bz_command}`
       retrieved     = []
-      bz_csv.split("\n").each do |row|
-        values = row.split("\x1F")
+      bz_csv.split("||EOR\n").each do |row|
+        values = row.split("\x1F").map{ |v| v.strip }
+        next unless values.length > 0
         if not @external_bugs_idx.nil?
-          if not @external_sub.nil? and values[@external_bugs_idx].include?(@external_sub)
+          if not @external_sub.nil? and not values[@external_bugs_idx].nil? and values[@external_bugs_idx].include?(@external_sub)
             values[@external_bugs_idx] = 1
           else
             values[@external_bugs_idx] = 0
@@ -51,14 +52,14 @@ module Shiftzilla
         retrieved.each do |values|
           dbh.execute("INSERT INTO #{@table} (#{table_fields}) VALUES (#{insert_frame})", values)
         end
-        dbh.execute("UPDATE #{@table} SET Snapshot = date('now') WHERE Snapshot ISNULL")
+        dbh.execute("UPDATE #{@table} SET Snapshot = date('now','localtime') WHERE Snapshot ISNULL")
         dbh.commit
       end
       return retrieved.length
     end
 
     def purge_records
-      dbh.execute("DELETE FROM #{@table} WHERE Snapshot == date('now') OR Snapshot ISNULL")
+      dbh.execute("DELETE FROM #{@table} WHERE Snapshot == date('now','localtime') OR Snapshot ISNULL")
     end
   end
 end

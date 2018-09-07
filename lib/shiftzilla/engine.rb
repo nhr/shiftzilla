@@ -3,7 +3,6 @@ require 'shiftzilla/config'
 require 'shiftzilla/helpers'
 require 'shiftzilla/org_data'
 require 'terminal-table'
-require 'trollop'
 
 include Shiftzilla::Helpers
 
