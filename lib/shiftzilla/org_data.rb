@@ -1,3 +1,4 @@
+require 'fileutils'
 require 'json'
 require 'shiftzilla/bug'
 require 'shiftzilla/helpers'
@@ -281,8 +282,13 @@ module Shiftzilla
     end
 
     def publish_reports(ssh)
-      system("ssh #{ssh[:host]} 'rm -rf #{ssh[:path]}/*'")
-      system("rsync -avPq #{@tmp_dir}/* #{ssh[:host]}:#{ssh[:path]}/")
+      if ssh[:host] == '_localhost'
+        FileUtils.rm_rf("#{ssh[:path]}/*")
+        system("rsync -avPq #{@tmp_dir}/* #{ssh[:path]}/")
+      else
+        system("ssh #{ssh[:host]} 'rm -rf #{ssh[:path]}/*'")
+        system("rsync -avPq #{@tmp_dir}/* #{ssh[:host]}:#{ssh[:path]}/")
+      end
     end
 
     private
