@@ -2,3 +2,4 @@
 *.png
 Gemfile.lock
 *.gem
+.bundle
