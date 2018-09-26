@@ -35,11 +35,16 @@ module Shiftzilla
       :background_image  => nil,
     }
 
-    def set_sza_dir(sza_dir)
-      Shiftzilla.const_set('SZA_DIR',sza_dir)
-      Shiftzilla.const_set('ARCH_DIR',File.join(Shiftzilla::SZA_DIR,'archive'))
-      Shiftzilla.const_set('CFG_FILE',File.join(Shiftzilla::SZA_DIR,'shiftzilla_cfg.yml'))
-      Shiftzilla.const_set('DB_FPATH',File.join(Shiftzilla::SZA_DIR,DB_FNAME))
+    def set_sza_cfg(sza_cfg)
+      Shiftzilla.const_set('CFG_FILE',sza_cfg)
+    end
+
+    def set_sza_db(sza_db)
+      Shiftzilla.const_set('DB_FPATH',sza_db)
+    end
+
+    def set_sza_arch(sza_arch)
+      Shiftzilla.const_set('ARCH_DIR',sza_arch)
     end
 
     def tmp_dir
