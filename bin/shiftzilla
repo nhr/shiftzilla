@@ -46,7 +46,9 @@ Description:
 Options:
 EOF
     opt :purge, "After querying for bug data - if we already have data for today, clear it out before loading new data", :default => false
-    opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
+    opt :cfgpath, "Specify a config file for shiftzilla to use.", :default => "#{DEFAULT_DIR}/shiftzilla_cfg.yaml"
+    opt :dbpath, "Specify a database file location for shiftzilla to use.", :default => "#{DEFAULT_DIR}/shiftzilla.sqlite"
+    opt :archpath, "Specify a path to store database backups.", :default => "#{DEFAULT_DIR}/archive"
   end
 when 'build'
   Optimist::options do
@@ -62,7 +64,8 @@ Options:
 EOF
     opt :local_preview, "Don't publish, just show the report locally", :default => false
     opt :quiet, "For cron use; don't print anything to STDOUT.", :default => false
-    opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
+    opt :cfgpath, "Specify a config file for shiftzilla to use.", :default => "#{DEFAULT_DIR}/shiftzilla_cfg.yaml"
+    opt :dbpath, "Specify a database file location for shiftzilla to use.", :default => "#{DEFAULT_DIR}/shiftzilla.sqlite"
   end
 when 'purge'
   Optimist::options do
@@ -75,7 +78,8 @@ Description:
 
 Options:
 EOF
-    opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
+    opt :cfgpath, "Specify a config file for shiftzilla to use.", :default => "#{DEFAULT_DIR}/shiftzilla_cfg.yaml"
+    opt :dbpath, "Specify a database file location for shiftzilla to use.", :default => "#{DEFAULT_DIR}/shiftzilla.sqlite"
   end
 when 'triage'
   Optimist::options do
@@ -89,7 +93,8 @@ Description:
 
 Options:
 EOF
-    opt :configdir, "Specify a config directory for shiftzilla to use.", :default => DEFAULT_DIR
+    opt :cfgpath, "Specify a config file for shiftzilla to use.", :default => "#{DEFAULT_DIR}/shiftzilla_cfg.yaml"
+    opt :dbpath, "Specify a database file location for shiftzilla to use.", :default => "#{DEFAULT_DIR}/shiftzilla.sqlite"
   end
 when 'help'
   Optimist::educate
@@ -98,10 +103,14 @@ when 'version'
   exit 0
 end
 
-if cmd_opts.has_key?(:configdir)
-  set_sza_dir(cmd_opts[:configdir])
-else
-  set_sza_dir(DEFAULT_DIR)
+if cmd_opts.has_key?(:cfgpath)
+  set_sza_cfg(cmd_opts[:cfgpath])
+end
+if cmd_opts.has_key?(:dbpath)
+  set_sza_db(cmd_opts[:dbpath])
+end
+if cmd_opts.has_key?(:archpath)
+  set_sza_arch(cmd_opts[:archpath])
 end
 
 # Check for the config info
