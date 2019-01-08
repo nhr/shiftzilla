@@ -30,7 +30,16 @@ module Shiftzilla
       retrieved     = []
       bz_csv.split("||EOR\n").each do |row|
         values = row.split("\x1F").map{ |v| v.strip }
+
+        # Validate input
         next unless values.length > 0
+        begin
+          next unless Integer(values[0]) > 0
+        rescue
+          puts "Error: `#{values[0]}` is not a valid Bug ID."
+          next
+        end
+
         if not @external_bugs_idx.nil?
           if not @external_sub.nil? and not values[@external_bugs_idx].nil? and values[@external_bugs_idx].include?(@external_sub)
             values[@external_bugs_idx] = 1
