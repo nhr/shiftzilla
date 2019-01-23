@@ -101,6 +101,8 @@ when 'help'
 when 'version'
   puts Shiftzilla::VERSION
   exit 0
+else
+  Optimist::educate
 end
 
 if cmd_opts.has_key?(:cfgpath)
