@@ -34,8 +34,6 @@ module Shiftzilla
           menu.choice(:yes) {
             say("Okay. Creating #{Shiftzilla::DB_FPATH}")
             sql_tmpl       = File.read(SQL_TMPL)
-            tgt_rel_clause = release_clause(releases)
-            sql_tmpl.gsub! '$RELEASE_CLAUSE', tgt_rel_clause
             dbh.execute_batch(sql_tmpl)
             dbh.close
             exit
