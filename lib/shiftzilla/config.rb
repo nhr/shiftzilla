@@ -6,13 +6,14 @@ require 'shiftzilla/team'
 
 module Shiftzilla
   class Config
-    attr_reader :teams, :groups, :sources, :releases, :ssh
+    attr_reader :teams, :groups, :sources, :releases, :ssh, :org_title
 
     def initialize
-      @teams    = []
-      @groups   = []
-      @sources  = []
-      group_map = {}
+      @org_title = cfg_file['OrgTitle']
+      @teams     = []
+      @groups    = []
+      @sources   = []
+      group_map  = {}
       cfg_file['Groups'].each do |group|
         gobj = Shiftzilla::Group.new(group)
         @groups << gobj

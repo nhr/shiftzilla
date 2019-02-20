@@ -191,7 +191,7 @@ module Shiftzilla
         puts "#{CFG_FILE} did not get parsed as a hash."
         exit
       end
-      missing_keys = ['Groups','Teams','Sources','Releases','SSH'].select{ |k| not raw_cfg.has_key?(k) }
+      missing_keys = ['OrgTitle','Groups','Teams','Sources','Releases','SSH'].select{ |k| not raw_cfg.has_key?(k) }
       if missing_keys.length > 0
         if missing_keys.length > 1
           puts "#{CFG_FILE} is missing the following keys: #{missing_keys.join(', ')}"
@@ -211,6 +211,11 @@ module Shiftzilla
       end
 
       errors = []
+
+      # OrgTitle check
+      if not valid_config_string?(raw_cfg['OrgTitle'])
+        errors << "OrgTitle value is nil or zero-length"
+      end
 
       # Group checks
       list_idx  = 0
