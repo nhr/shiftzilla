@@ -15,7 +15,7 @@ module Shiftzilla
       @teams           = config.teams
       @releases        = config.releases
       @tmp_dir         = Shiftzilla::Helpers.tmp_dir
-      @org_data        = { '_overall' => Shiftzilla::TeamData.new('_overall') }
+      @org_data        = { '_overall' => Shiftzilla::TeamData.new('_overall',config) }
     end
 
     def populate_releases

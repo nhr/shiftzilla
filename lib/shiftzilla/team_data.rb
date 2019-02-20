@@ -4,17 +4,18 @@ module Shiftzilla
   class TeamData
     attr_reader :name
 
-    def initialize(tname)
+    def initialize(tname,config=nil)
       @name         = tname
+      @config       = config
       @release_data = {}
     end
 
     def title
-      @title ||= (@name == '_overall' ? 'Atomic / OpenShift' : @name)
+      @title ||= (@name == '_overall' ? @config.org_title : @name)
     end
 
     def prefix
-      @prefix ||= (@name == '_overall' ? "all_aos" : "team_#{@name.tr(' ?()', '')}")
+      @prefix ||= (@name == '_overall' ? "all_org" : "team_#{@name.tr(' ?()', '')}")
     end
 
     def file

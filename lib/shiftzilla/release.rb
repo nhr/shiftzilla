@@ -5,7 +5,7 @@ module Shiftzilla
     attr_reader :name, :targets, :milestones, :default, :token
 
     def initialize(release,builtin=false)
-      @name       = release['name']
+      @name       = release['name'].to_s
       @token      = @name.tr(' .', '_')
       @targets    = release['targets']
       @default    = release.has_key?('default') ? release['default'] : false
