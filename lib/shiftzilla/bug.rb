@@ -1,11 +1,12 @@
 module Shiftzilla
   class Bug
-    attr_reader :id, :first_seen, :last_seen, :test_blocker, :ops_blocker, :online_blocker, :owner, :component, :pm_score, :cust_cases, :tgt_release, :summary, :status
+    attr_reader :id, :first_seen, :last_seen, :beta_blocker, :test_blocker, :ops_blocker, :online_blocker, :owner, :component, :pm_score, :cust_cases, :tgt_release, :summary, :status
 
     def initialize(bzid,binfo)
       @id             = bzid
       @first_seen     = binfo[:snapdate]
       @last_seen      = binfo[:snapdate]
+      @beta_blocker   = binfo[:beta_blocker]
       @test_blocker   = binfo[:test_blocker]
       @ops_blocker    = binfo[:ops_blocker]
       @online_blocker = binfo[:online_blocker]
@@ -20,6 +21,7 @@ module Shiftzilla
 
     def update(binfo)
       @last_seen      = binfo[:snapdate]
+      @beta_blocker   = binfo[:beta_blocker]
       @test_blocker   = binfo[:test_blocker]
       @ops_blocker    = binfo[:ops_blocker]
       @online_blocker = binfo[:online_blocker]
