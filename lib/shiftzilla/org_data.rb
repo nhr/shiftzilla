@@ -45,6 +45,7 @@ module Shiftzilla
           # Package up bug data
           binfo = {
             :snapdate       => snapdate,
+            :beta_blocker   => keyw.include?('BetaBlocker'),
             :test_blocker   => keyw.include?('TestBlocker'),
             :ops_blocker    => keyw.include?('OpsBlocker'),
             :online_blocker => keyw.include?('OnlineStarter'),
@@ -87,7 +88,7 @@ module Shiftzilla
 
             # Add info to the snapshot
             snapdata.bug_ids << bzid
-            if bug.test_blocker or bug.ops_blocker or bug.online_blocker
+            if bug.beta_blocker or bug.test_blocker or bug.ops_blocker or bug.online_blocker
               snapdata.tb_ids << bzid
             end
             if bug.cust_cases
