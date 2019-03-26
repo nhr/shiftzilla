@@ -13,6 +13,8 @@ module Shiftzilla
     def initialize(config)
       @config          = config
       @teams           = config.teams
+      @groups          = config.groups
+      @group_teams     = []
       @releases        = config.releases
       @tmp_dir         = Shiftzilla::Helpers.tmp_dir
       @org_data        = { '_overall' => Shiftzilla::TeamData.new('_overall',config) }
@@ -62,29 +64,42 @@ module Shiftzilla
           all_release = @config.release('All')
 
           # If this component isn't mapped to a team, stub out a fake team.
-          tname = comp_map.has_key?(comp) ? comp_map[comp] : "(?) #{comp}"
+          tname = team_comp_map.has_key?(comp) ? team_comp_map[comp] : "(?) #{comp}"
           unless @org_data.has_key?(tname)
             @config.add_ad_hoc_team({ 'name' => tname, 'components' => [comp] })
             @org_data[tname] = Shiftzilla::TeamData.new(tname)
+          end
+
+          # Generate TeamData objects for each group
+          gname = group_comp_map.has_key?(comp) ? group_comp_map[comp] : nil
+          if not gname.nil? and not @org_data.has_key?(gname)
+            @org_data[gname] = Shiftzilla::TeamData.new(gname)
           end
 
           team_rdata = tgt_release.nil? ? nil : @org_data[tname].get_release_data(tgt_release)
           team_adata = @org_data[tname].get_release_data(all_release)
           over_rdata = tgt_release.nil? ? nil : @org_data['_overall'].get_release_data(tgt_release)
           over_adata = @org_data['_overall'].get_release_data(all_release)
+          unless gname.nil?
+            group_rdata = tgt_release.nil? ? nil : @org_data[gname].get_release_data(tgt_release)
+            group_adata = @org_data[gname].get_release_data(all_release)
+          else
+            group_rdata = nil
+            group_adata = nil
+          end
 
           # Do some bean counting
-          [over_rdata,team_rdata,over_adata,team_adata].each do |group|
-            next if group.nil?
-            snapdata = group.get_snapdata(snapshot)
-            if group.first_snap.nil?
-              group.first_snap     = snapshot
-              group.first_snapdate = snapdate
+          [over_rdata,team_rdata,over_adata,team_adata,group_rdata,group_adata].each do |grouping|
+            next if grouping.nil?
+            snapdata = grouping.get_snapdata(snapshot)
+            if grouping.first_snap.nil?
+              grouping.first_snap     = snapshot
+              grouping.first_snapdate = snapdate
             end
-            group.latest_snap     = snapshot
-            group.latest_snapdate = snapdate
+            grouping.latest_snap     = snapshot
+            grouping.latest_snapdate = snapdate
 
-            bug = group.add_or_update_bug(bzid,binfo)
+            bug = grouping.add_or_update_bug(bzid,binfo)
 
             # Add info to the snapshot
             snapdata.bug_ids << bzid
@@ -131,6 +146,18 @@ module Shiftzilla
           end
         end
       end
+
+      # Create a "team" for each group here
+      @groups.each do |g|
+        ginfo = {
+          'name' => g.name,
+          'lead' => g.lead,
+          'group' => g.id,
+          'components' => g.components,
+        }
+        @group_teams << Shiftzilla::Team.new(ginfo, {g.id => g})
+      end
+
       @all_teams     = @teams.map{ |t| t.name }.concat(@org_data.keys).uniq
       @ordered_teams = ['_overall'].concat(@all_teams.select{ |t| t != '_overall'}.sort)
     end
@@ -182,9 +209,10 @@ module Shiftzilla
       end
     end
 
-    def generate_reports
+    def generate_reports(include_groups)
       build_time  = timestamp
       all_release = @config.release('All')
+
       @ordered_teams.each do |tname|
         tinfo = @config.team(tname)
         tdata = @org_data[tname]
@@ -200,7 +228,13 @@ module Shiftzilla
           :releases        => [],
           :latest_snapshot => latest_snapshot,
           :all_bugs        => [],
+          :include_groups  => include_groups,
         }
+
+        # Check if this is actually a group "team"
+        if tname.start_with?("Group")
+          team_pinfo[:tinfo] = @group_teams.select{|g| g.name == tname}[0]
+        end
 
         @releases.each do |release|
           rname    = release.name
@@ -245,7 +279,7 @@ module Shiftzilla
                     :data  => rdata.series[:closed_bugs],
                   },
               ]),
-              :blockers   => chartify('Test / Ops Blockers',rdata.series[:date],[
+              :blockers   => chartify('Blockers',rdata.series[:date],[
                   {
                     :label => 'Total',
                     :data  => rdata.series[:total_tb],
@@ -270,6 +304,7 @@ module Shiftzilla
         team_page = haml_engine.render(Object.new,team_pinfo)
         File.write(File.join(@tmp_dir,tdata.file), team_page)
       end
+
       # Copy flot library to build area
       jsdir = File.join(@tmp_dir,'js')
       Dir.mkdir(jsdir)
@@ -294,17 +329,32 @@ module Shiftzilla
 
     private
 
-    def comp_map
-      @comp_map ||= begin
-        comp_map = {}
+    def team_comp_map
+      @team_comp_map ||= begin
+        team_comp_map = {}
         @teams.each do |team|
           team.components.each do |comp|
-            comp_map[comp] = team.name
+            team_comp_map[comp] = team.name
           end
         end
-        comp_map
+        team_comp_map
       end
     end
+
+    # Creates group component mapping
+    def group_comp_map
+      @group_comp_map ||= begin
+        group_comp_map = {}
+        @groups.each do |group|
+          group.components.each do |comp|
+            group_comp_map[comp] = group.name
+          end
+        end
+        group_comp_map
+      end
+    end
+
+
 
     def chartify(title,dates,series)
       modulo = label_modulo(dates.length)

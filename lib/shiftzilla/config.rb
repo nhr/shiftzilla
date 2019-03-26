@@ -22,6 +22,7 @@ module Shiftzilla
       cfg_file['Teams'].each do |team|
         @teams << Shiftzilla::Team.new(team,group_map)
       end
+      update_group_components
       cfg_file['Sources'].each do |sid,sinfo|
         @sources << Shiftzilla::Source.new(sid,sinfo)
       end
@@ -48,6 +49,10 @@ module Shiftzilla
 
     def team(tname)
       @teams.select{ |t| t.name == tname }[0]
+    end
+
+    def group(gname)
+      @groups.select{ |g| g.id == gname[0] }[0]
     end
 
     def add_ad_hoc_team(tinfo)
@@ -95,5 +100,18 @@ module Shiftzilla
         boundaries
       end
     end
+
+    def update_group_components
+      @groups.each do |g|
+        components = []
+        @teams.each do |t|
+          if t.group and (t.group.id == g.id)
+            components += t.components
+          end
+        end
+        g.set_components(components)
+      end
+    end
+
   end
 end

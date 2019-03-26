@@ -45,7 +45,8 @@
           - if tname != '_overall' and not tinfo.nil? and not tinfo.ad_hoc?
             %h5 Team Info
             %ul
-              %li= "Team Lead: #{tinfo.lead}"
+              - unless tname.start_with?("Group")
+                %li= "Team Lead: #{tinfo.lead}"
               - if not tinfo.group.nil? and not tinfo.group.lead.nil?
                 %li= "Group Lead: #{tinfo.group.lead}"
               - if tinfo.components.length > 0
@@ -69,7 +70,7 @@
               - releases.each do |r|
                 %td.text-right= r[:bug_avg_age]
             %tr
-              %td Avg. Test Blocker Age
+              %td Avg. Blocker Age
               - releases.each do |r|
                 %td.text-right= r[:tb_avg_age]
             %tr
@@ -81,7 +82,7 @@
               - releases.each do |r|
                 %td.text-right= r[:snapdata].closed_bugs
             %tr
-              %td Test / Ops Blockers
+              %td Blockers
               - releases.each do |r|
                 %td.text-right= r[:snapdata].total_tb
             %tr
@@ -92,6 +93,26 @@
               %td Closed Blockers Yesterday
               - releases.each do |r|
                 %td.text-right= r[:snapdata].closed_tb
+
+          - if tname == '_overall' and include_groups
+            %h5 Totals By Group
+            %table.table.table-hover.table-sm
+              %tr
+                %td Group
+                - releases.each do |r|
+                  %td.text-right= r[:release].name
+              - team_files.each do |tm|
+                - if not tm[:tname].start_with?("Group")
+                  - next
+                %tr
+                  %td
+                    - if tm[:tname] == tdisp
+                      = tdisp
+                    - else
+                      %a{ :href => tm[:file] }= tm[:tname]
+                  - releases.each do |r|
+                    %td.text-right= tm[:releases][r[:release].name]
+
           - if tname == '_overall'
             %h5 Totals By Team
             %table.table.table-hover.table-sm
@@ -100,6 +121,8 @@
                 - releases.each do |r|
                   %td.text-right= r[:release].name
               - team_files.each do |tm|
+                - if tm[:tname].start_with?("Group")
+                  - next
                 %tr
                   %td
                     - if tm[:tname] == tdisp
