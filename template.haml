@@ -45,7 +45,7 @@
           - if tname != '_overall' and not tinfo.nil? and not tinfo.ad_hoc?
             %h5 Team Info
             %ul
-              - unless tname.start_with?("Group")
+              - unless is_group
                 %li= "Team Lead: #{tinfo.lead}"
               - if not tinfo.group.nil? and not tinfo.group.lead.nil?
                 %li= "Group Lead: #{tinfo.group.lead}"
@@ -102,7 +102,7 @@
                 - releases.each do |r|
                   %td.text-right= r[:release].name
               - team_files.each do |tm|
-                - if not tm[:tname].start_with?("Group")
+                - unless tm[:is_group]
                   - next
                 %tr
                   %td
@@ -121,7 +121,7 @@
                 - releases.each do |r|
                   %td.text-right= r[:release].name
               - team_files.each do |tm|
-                - if tm[:tname].start_with?("Group")
+                - if tm[:is_group]
                   - next
                 %tr
                   %td

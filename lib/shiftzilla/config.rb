@@ -22,7 +22,7 @@ module Shiftzilla
       cfg_file['Teams'].each do |team|
         @teams << Shiftzilla::Team.new(team,group_map)
       end
-      update_group_components
+      set_group_components
       cfg_file['Sources'].each do |sid,sinfo|
         @sources << Shiftzilla::Source.new(sid,sinfo)
       end
@@ -101,7 +101,7 @@ module Shiftzilla
       end
     end
 
-    def update_group_components
+    def set_group_components
       @groups.each do |g|
         components = []
         @teams.each do |t|

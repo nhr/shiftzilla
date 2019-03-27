@@ -186,6 +186,7 @@ module Shiftzilla
           :tname          => tdata.title,
           :file           => tdata.file,
           :releases       => {},
+          :is_group       => (not @group_teams.detect{|g| g.name == tdata.title}.nil?),
         }
 
         @releases.each do |release|
@@ -229,11 +230,14 @@ module Shiftzilla
           :latest_snapshot => latest_snapshot,
           :all_bugs        => [],
           :include_groups  => include_groups,
+          :is_group        => false,
         }
 
         # Check if this is actually a group "team"
-        if tname.start_with?("Group")
-          team_pinfo[:tinfo] = @group_teams.select{|g| g.name == tname}[0]
+        group_match = @group_teams.detect{|g| g.name == tname}
+        unless group_match.nil?
+          team_pinfo[:tinfo] = group_match
+          team_pinfo[:is_group] = true
         end
 
         @releases.each do |release|

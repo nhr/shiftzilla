@@ -6,11 +6,10 @@ module Shiftzilla
       @name        = "Group " + ginfo['id']
       @id          = ginfo['id']
       @lead        = ginfo['lead']
-      @components  = []
     end
 
     def set_components(component_list)
-      @components += component_list
+      @components ||= component_list
     end
 
   end
