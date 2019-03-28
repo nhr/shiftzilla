@@ -249,6 +249,8 @@ module Shiftzilla
           errors << "Team at index #{list_idx} is missing the 'name' key."
         elsif not valid_config_string?(team['name'])
           errors << "Team at index #{list_idx} has a nil or zero-length 'name'."
+        elsif team['name'].start_with?("Group")
+          errors << "Team at index #{list_idx} begins with the string 'Group'."
         else
           tnm = team['name']
           if seen_tnms.has_key?(tnm)

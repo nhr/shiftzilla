@@ -113,7 +113,7 @@ module Shiftzilla
       org_data = Shiftzilla::OrgData.new(shiftzilla_config)
       org_data.populate_releases
       org_data.build_series
-      org_data.generate_reports
+      org_data.generate_reports(options[:groups])
       if options[:local_preview]
         org_data.show_local_reports
       else

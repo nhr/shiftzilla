@@ -66,6 +66,7 @@ EOF
     opt :quiet, "For cron use; don't print anything to STDOUT.", :default => false
     opt :cfgpath, "Specify a config file for shiftzilla to use.", :default => "#{DEFAULT_DIR}/shiftzilla_cfg.yaml"
     opt :dbpath, "Specify a database file location for shiftzilla to use.", :default => "#{DEFAULT_DIR}/shiftzilla.sqlite"
+    opt :groups, "Enable group aggregation table on main page", :default => false
   end
 when 'purge'
   Optimist::options do
