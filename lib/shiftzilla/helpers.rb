@@ -331,10 +331,14 @@ module Shiftzilla
               if not milestones.has_key?(ms)
                 errors << "Release at index #{list_idx} is missing the '#{ms}' milestone."
               else
+                if milestones[ms] == 'today' or !!(milestones[ms] =~ /today[+-]\d+[dwms]/)
+                  # Matches the variable date format
+                  next
+                end
                 ms_date = milestones[ms].split('-')
                 if ms_date.length == 3 and ms_date[0].length == 4 and ms_date[1].length == 2 and ms_date[2].length == 2
                 else
-                  errors << "Release at index #{list_idx}: milestone '#{ms}' is not formatted correctly (YYYY-MM-DD)."
+                  errors << "Release at index #{list_idx}: milestone '#{ms}' is not formatted correctly - (YYYY-MM-DD) or (today[+-]X[dwms])."
                 end
               end
             end
