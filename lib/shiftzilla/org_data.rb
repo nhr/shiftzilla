@@ -40,7 +40,7 @@ module Shiftzilla
 
           # TODO: REMOVE BUSINESS LOGIC EMBEDDED IN CODE
           if comp == 'Security' and keyw.include?('Unconfirmed')
-            puts "NB: This report has a hardcoded exclusion of 'Security' component bugs with the 'Unconfirmed' keyword."
+            # This report has a hardcoded exclusion of 'Security' component bugs with the 'Unconfirmed' keyword."
             next
           end
 
