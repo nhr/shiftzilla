@@ -6,8 +6,8 @@ require 'shiftzilla/version'
 Gem::Specification.new do |spec|
   spec.name          = "shiftzilla"
   spec.version       = Shiftzilla::VERSION
-  spec.authors       = ["N. Harrison Ripps"]
-  spec.email         = ["nhr@redhat.com"]
+  spec.authors       = ["N. Harrison Ripps","Rory Thrasher"]
+  spec.email         = ["nhr@redhat.com","rthrashei@redhat.com"]
   spec.summary       = %q{Shiftzilla is a tool for providing historical reports based on Bugzilla data}
   spec.description   = spec.summary
   spec.homepage      = "http://github.com/nhr/shiftzilla"
