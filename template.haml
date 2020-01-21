@@ -50,7 +50,7 @@
               - if not tinfo.group.nil? and not tinfo.group.lead.nil?
                 %li= "Group Lead: #{tinfo.group.lead}"
               - if tinfo.components.length > 0
-                %li= "BZ Component(s): #{tinfo.components.join(', ')}"
+                %li= "BZ Component(s): " + tinfo.components.map{ |c| "<a href='component_#{c}.html'>#{c}</a>"}.join(', ')
           %h5= "#{tdisp} Summary"
           %table.table.table-hover.table-sm
             %tr

@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'json'
+require 'uri'
 require 'shiftzilla/bug'
 require 'shiftzilla/helpers'
 require 'shiftzilla/team_data'
@@ -213,6 +214,7 @@ module Shiftzilla
     def generate_reports(include_groups)
       build_time  = timestamp
       all_release = @config.release('All')
+      redirects = {}
 
       @ordered_teams.each do |tname|
         tinfo = @config.team(tname)
@@ -235,9 +237,14 @@ module Shiftzilla
 
         # Check if this is actually a group "team"
         group_match = @group_teams.detect{|g| g.name == tname}
-        unless group_match.nil?
+        if not group_match.nil?
           team_pinfo[:tinfo] = group_match
           team_pinfo[:is_group] = true
+        elsif not tinfo.nil?
+          # Generate component -> team redirects
+          tinfo.components.each do |component|
+            redirects[component] = tdata.file
+          end
         end
 
         @releases.each do |release|
@@ -308,6 +315,23 @@ module Shiftzilla
         team_page = haml_engine.render(Object.new,team_pinfo)
         File.write(File.join(@tmp_dir,tdata.file), team_page)
       end
+
+      # Create component->team redirects
+      redirects.each do |component, team_file|
+        redirect_html = <<-HTML
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Refresh" content="0; url=#{team_file}" />
+  </head>
+  <body>
+    <p>Redirecting to <a href="#{team_file}">team page</a>...</p>
+  </body>
+</html>
+HTML
+        File.write(File.join(@tmp_dir, "component_#{component}.html"), redirect_html)
+      end
+
 
       # Copy flot library to build area
       jsdir = File.join(@tmp_dir,'js')
