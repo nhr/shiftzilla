@@ -25,7 +25,9 @@ module Shiftzilla
       output_format = @fields.map{ |fld| "%{#{fld.to_s}}" }.join("\x1F")
       table_fields  = @fields.map{ |fld| "\"#{field_map[fld]}\"" }.join(',')
       insert_frame  = @fields.map{ |fld| '?' }.join(', ')
-      bz_command    = "bugzilla query --savedsearch #{@search} --savedsearch-sharer-id=#{@sharer} --outputformat='#{output_format}||EOR'"
+      # Also grabs the flags to check for the blocker flag, this is dropped before inserting into the db
+      bz_command    = "bugzilla query --savedsearch #{@search} --savedsearch-sharer-id=#{@sharer} --outputformat='#{output_format}\x1F%{flags}flags||EOR'"
+
       bz_csv        = `#{bz_command}`
       retrieved     = []
       bz_csv.split("||EOR\n").each do |row|
@@ -47,6 +49,28 @@ module Shiftzilla
             values[@external_bugs_idx] = 0
           end
         end
+
+        # Check for blocker+ flag and stub it as a keyword
+        if not values[-1].nil? and values[-1].include?("blocker+")
+          keyword_idx = @fields.index(:keywords)
+          if not values[keyword_idx]
+            values[keyword_idx] = "blocker+"
+          else
+            values[keyword_idx] = values[keyword_idx] + ",blocker+"
+          end
+        end
+        # Check for blocker? flag and stub it as a keyword
+        if not values[-1].nil? and values[-1].include?("blocker?")
+          keyword_idx = @fields.index(:keywords)
+          if not values[keyword_idx]
+            values[keyword_idx] = "blocker?"
+          else
+            values[keyword_idx] = values[keyword_idx] + ",blocker?"
+          end
+        end
+
+        # Remove flags, which is always the final value
+        values = values[0...-2]
         retrieved << values
       end
       puts "Retrieved #{retrieved.length} rows"

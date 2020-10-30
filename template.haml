@@ -153,7 +153,7 @@
               %thead
                 %tr
                   %th
-                    %abbr{ :title => 'Beta Blocker, Test Blocker, Ops Blocker, or Online Blocker?' } Blocker
+                    %abbr{ :title => 'Blocker flags and keywords' } Blocker
                   %th
                     %abbr{ :title => 'See https://mojo.redhat.com/docs/DOC-1159309' } PM
                   %th
@@ -169,10 +169,10 @@
                 - all_bugs.each do |b|
                   %tr
                     %td
-                      = b.beta_blocker ? "<span class='badge badge-info'>&#946;eta</span>" : ''
-                      = b.test_blocker ? "<span class='badge badge-danger'>Test</span>" : ''
-                      = b.ops_blocker ? "<span class='badge badge-dark'>Ops</span>" : ''
-                      = b.online_blocker ? "<span class='badge badge-warning'>Online</span>" : ''
+                      = b.blocker_plus ? "<span class='badge badge-danger'>&#914;locker+</span>" : ''
+                      = b.blocker_unknown ? "<span class='badge badge-info'>blocker?</span>" : ''
+                      = b.test_blocker ? "<span class='badge badge-warning'>Test</span>" : ''
+                      = b.ops_blocker ? "<span class='badge badge-dark'>SD</span>" : ''
                     %td= b.pm_score
                     %td= b.cust_cases ? "<span class='badge badge-warning'>CC</span>" : ''
                     %td(data-order="#{b.semver}")= b.tgt_release

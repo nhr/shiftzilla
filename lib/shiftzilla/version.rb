@@ -1,3 +1,3 @@
 module Shiftzilla
-  VERSION = "0.2.30"
+  VERSION = "0.2.31"
 end
