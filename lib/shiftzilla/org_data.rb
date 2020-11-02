@@ -47,18 +47,18 @@ module Shiftzilla
 
           # Package up bug data
           binfo = {
-            :snapdate       => snapdate,
-            :beta_blocker   => keyw.include?('BetaBlocker'),
-            :test_blocker   => keyw.include?('TestBlocker'),
-            :ops_blocker    => keyw.include?('OpsBlocker'),
-            :online_blocker => keyw.include?('OnlineStarter'),
-            :owner          => owns,
-            :summary        => summ,
-            :status         => stat,
-            :component      => comp,
-            :pm_score       => pmsc,
-            :cust_cases     => (cust == 1),
-            :tgt_release    => tgtr,
+            :snapdate        => snapdate,
+            :blocker_plus    => keyw.include?('blocker+'),
+            :blocker_unknown => keyw.include?('blocker?'),
+            :test_blocker    => keyw.include?('TestBlocker'),
+            :ops_blocker     => keyw.include?('ServiceDeliveryBlocker'),
+            :owner           => owns,
+            :summary         => summ,
+            :status          => stat,
+            :component       => comp,
+            :pm_score        => pmsc,
+            :cust_cases      => (cust == 1),
+            :tgt_release     => tgtr,
           }
 
           tgt_release = @config.release_by_target(tgtr)
@@ -104,7 +104,8 @@ module Shiftzilla
 
             # Add info to the snapshot
             snapdata.bug_ids << bzid
-            if bug.beta_blocker or bug.test_blocker or bug.ops_blocker or bug.online_blocker
+            # Only the blocker+ flag counts as a blocker for snapshots
+            if bug.blocker_plus
               snapdata.tb_ids << bzid
             end
             if bug.cust_cases
