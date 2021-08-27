@@ -25,11 +25,31 @@ module Shiftzilla
       output_format = @fields.map{ |fld| "%{#{fld.to_s}}" }.join("\x1F")
       table_fields  = @fields.map{ |fld| "\"#{field_map[fld]}\"" }.join(',')
       insert_frame  = @fields.map{ |fld| '?' }.join(', ')
-      # Also grabs the flags to check for the blocker flag, this is dropped before inserting into the db
-      bz_command    = "bugzilla query --savedsearch #{@search} --savedsearch-sharer-id=#{@sharer} --outputformat='#{output_format}\x1F%{flags}flags||EOR'"
-
-      bz_csv        = `#{bz_command}`
+      # Previous bz_command that used the savedsearch provided by the config
+      #bz_command    = "bugzilla query --savedsearch #{@search} --savedsearch-sharer-id=#{@sharer} --outputformat='#{output_format}\x1F%{flags}flags||EOR'"
       retrieved     = []
+      bz_page_size  = 1000
+      offset        = 0
+      # Results from the query, to be split by "||EOR\n"
+      bz_csv        = ""
+
+      # Execute the bugzilla query with pagination
+      begin
+        # Generate the query via string interpolation and execute
+        # Query needs to be hard-coded here for string interpolation
+        bz_command = "bugzilla query --from-url 'https://bugzilla.redhat.com/buglist.cgi?bug_severity=unspecified&bug_severity=urgent&bug_severity=high&bug_severity=medium&bug_status=NEW&bug_status=ASSIGNED&bug_status=POST&bug_status=ON_DEV&classification=Red%20Hat&columnlist=short_desc%2Cversion%2Cbug_severity%2Cpriority%2Ccomponent%2Creporter%2Cassigned_to%2Cqa_contact%2Cbug_status%2Cproduct%2Cchangeddate%2Ctarget_release%2Ckeywords%2Cflagtypes.name%2Cbug_file_loc%2Cext_bz_list&f1=component&f10=target_release&f11=target_release&f2=component&f3=version&f4=target_release&f5=target_release&f6=target_release&f7=short_desc&f8=target_release&f9=short_desc&limit=#{bz_page_size}&list_id=12103836&o1=notequals&o10=notsubstring&o11=notsubstring&o2=notequals&o3=notregexp&o4=notsubstring&o5=notsubstring&o6=notsubstring&o7=notsubstring&o8=notsubstring&o9=notsubstring&offset=#{offset}&order=bug_status%2Cpriority%2Cassigned_to%2Cbug_id&product=OKD&product=OpenShift%20Container%20Platform&query_format=advanced&v1=Documentation&v2=RFE&v3=%5E2%5C.' --outputformat='#{output_format}\x1F%{flags}flags||EOR'"
+        bz_csv_inner = `#{bz_command}`
+
+        # Shovel results into bz_csv to parse later
+        bz_csv << bz_csv_inner
+
+        # Increase the offset by the page limit
+        offset += bz_page_size
+
+        # Repeat if we got the same number of results as the limit
+      end while bz_csv_inner.split("||EOR\n").length == bz_page_size
+
+      # Parse the results
       bz_csv.split("||EOR\n").each do |row|
         values = row.split("\x1F").map{ |v| v.strip }
 
