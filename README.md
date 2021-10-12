@@ -5,7 +5,8 @@ This is a specialized tool for aggregating Bugzilla records in a way that is use
 
 1. This utility depends on a python-based tool called [python-bugzilla](https://pypi.python.org/pypi/python-bugzilla).
     * Install it so that the `bugzilla` executable is in your $PATH
-    * Configure it by running `bugzilla login`
+    * Configure the API key by running `bugzilla login --api-key` and providing the API Key (interactive only)
+    * Alternatively, you can edit `~/.config/python-bugzilla/bugzillarc` to add it manually. See `man bugzilla` for formatting.
 2. Next grab this utility from RubyGems:
     * gem install shiftzilla
     * Run any command (like `shiftzilla summary`) to have the utility set up your local $HOME/.shiftzilla directory
